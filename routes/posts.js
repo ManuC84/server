@@ -1,9 +1,10 @@
-var express = require('express');
+var express = require("express");
+const { get } = require("mongoose");
 var router = express.Router();
+var { getPosts, createPost } = require("../controllers/posts.js");
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+router.get("/", getPosts);
+
+router.post("/", createPost);
 
 module.exports = router;

@@ -4,6 +4,7 @@ var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 var mongoose = require("mongoose");
 var dotenv = require("dotenv");
+var cors = require("cors");
 
 var indexRouter = require("./routes");
 var usersRouter = require("./routes/users");
@@ -28,6 +29,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.use(cors());
 
 // Routers
 app.use("/", indexRouter);
