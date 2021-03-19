@@ -6,7 +6,14 @@ const { fetchMetadata } = require("../utils/fetchMetadata.js");
 
 exports.getPosts = async (req, res) => {
   try {
-    const posts = await Post.find().limit(10).sort({ createdAt: -1 });
+    const skip =
+      req.query.skip && /^\d+$/.test(req.query.skip)
+        ? Number(req.query.skip)
+        : 0;
+    const posts = await Post.find({}, undefined, { skip, limit: 6 }).sort({
+      createdAt: -1,
+    });
+    //Fetch all at once: const posts = await Post.find().limit(10).sort({ createdAt: -1 });
     res.status(200).json(posts);
   } catch (error) {
     res.status(404).json({ message: error.message });
@@ -58,13 +65,11 @@ exports.getPostsByTags = async (req, res) => {
     const lowerCaseTags = tags.map((tag) => tag.toLowerCase());
     const taggedPosts = await Post.find({ tags: { $all: lowerCaseTags } });
 
-    console.log(taggedPosts);
-
     if (taggedPosts.length > 0) {
       res.status(200).json(taggedPosts);
     } else {
-      res.send({
-        errorMessage: "Your search yielded no results, please try again",
+      res.status(404).json({
+        message: "Your search yielded no results, please try again",
       });
     }
   } catch (error) {
@@ -75,13 +80,14 @@ exports.getPostsByTags = async (req, res) => {
 exports.addTags = async (req, res) => {
   const { tag } = req.body;
   const { id } = req.params;
+
   const lowerCaseTag = tag.toLowerCase();
   const post = await Post.findById(id);
   if (!post.tags.includes(lowerCaseTag)) {
     post.tags.push(lowerCaseTag);
   } else {
-    res.send({
-      errorMessage: "This tag already exists",
+    res.status(404).json({
+      message: "This tag already exists",
     });
     return;
   }

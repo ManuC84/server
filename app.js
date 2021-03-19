@@ -5,6 +5,7 @@ var logger = require("morgan");
 var mongoose = require("mongoose");
 var dotenv = require("dotenv");
 var cors = require("cors");
+var { connectionUrl } = require("./config/config.js");
 
 var indexRouter = require("./routes");
 var usersRouter = require("./routes/users");
@@ -16,7 +17,7 @@ dotenv.config();
 
 // Initalize DB
 mongoose
-  .connect(process.env.CONNECTION_URL, {
+  .connect(connectionUrl, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,
