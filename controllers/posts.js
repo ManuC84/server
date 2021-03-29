@@ -20,8 +20,21 @@ exports.getPosts = async (req, res) => {
   }
 };
 
+exports.getSinglePost = async (req, res) => {
+  const { id: postId } = req.query;
+  const post = await Post.findById(postId);
+  console.log(post);
+  if (!post) return res.status(404).json({ error: "This page doesn't exist" });
+
+  try {
+    res.status(201).json([post]);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 exports.createPost = async (req, res) => {
-  const { url } = req.body;
+  const { url: userUrl, creator } = req.body;
 
   const {
     description = "No description available",
@@ -29,7 +42,11 @@ exports.createPost = async (req, res) => {
     keywords,
     title = "No title available",
     type,
-  } = await fetchMetadata(url);
+    url,
+    provider,
+    icon,
+  } = await fetchMetadata(userUrl);
+
   const tags = keywords && keywords.map((tag) => tag.toLowerCase());
 
   const newPost = new Post({
@@ -39,21 +56,23 @@ exports.createPost = async (req, res) => {
     image: image,
     tags: tags,
     type: type,
+    provider: provider,
+    icon: icon,
+    creator: creator,
     createdAt: new Date().toISOString(),
   });
 
+  //Must implement regex in order to avoid duplicates
   const existingPost = await Post.find({ url: url });
-  console.log(existingPost);
+
+  if (existingPost.length) {
+    res.status(201).json(existingPost);
+    return;
+  }
 
   try {
-    if (existingPost.length) {
-      res
-        .status(201)
-        .json({ response: existingPost, message: "Existing Post" });
-      return;
-    }
     await newPost.save();
-    res.status(201).json(newPost);
+    res.status(201).json([newPost]);
   } catch (error) {
     res.status(409).json({ message: error.message });
   }
@@ -84,10 +103,11 @@ exports.addTags = async (req, res) => {
   const lowerCaseTag = tag.toLowerCase();
   const post = await Post.findById(id);
   if (!post.tags.includes(lowerCaseTag)) {
-    post.tags.push(lowerCaseTag);
+    post.tags.unshift(lowerCaseTag);
   } else {
     res.status(404).json({
-      message: "This tag already exists",
+      addTagError: "This tag already exists",
+      postId: post._id,
     });
     return;
   }
@@ -96,6 +116,6 @@ exports.addTags = async (req, res) => {
     const updatedPost = await Post.findByIdAndUpdate(id, post, { new: true });
     res.status(201).json(updatedPost);
   } catch (error) {
-    res.status(404).json({ errorMessage: error.message });
+    res.status(404).json({ error: error.message });
   }
 };

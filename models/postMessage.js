@@ -4,6 +4,12 @@ const postSchema = mongoose.Schema({
   title: String,
   description: String,
   url: String,
+  provider: String,
+  icon: String,
+  creator: {
+    type: [],
+    default: [],
+  },
   image: String,
   tags: {
     type: [String],
