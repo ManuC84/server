@@ -28,6 +28,10 @@ const postSchema = mongoose.Schema({
     type: Date,
     default: new Date(),
   },
+  comments: {
+    type: [],
+    default: [],
+  },
 });
 
 var Post = mongoose.model("Post", postSchema);

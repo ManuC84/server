@@ -1,19 +1,24 @@
-var express = require("express");
+const express = require("express");
 const { body } = require("express-validator");
-var router = express.Router();
-var {
+const router = express.Router();
+const {
   getPosts,
   createPost,
   getPostsByTags,
   addTags,
   getSinglePost,
 } = require("../controllers/posts.js");
+const { addComments } = require("../controllers/comments.js");
 
 router.get("/", getPosts);
 
 router.post("/", body("url").isURL().withMessage("Invalid Url"), createPost);
 
-router.get("/post", getSinglePost);
+router.get("/:id", getSinglePost);
+
+router.get("/:id/comments");
+
+router.post("/:id/comments", addComments);
 
 router.post("/tags", body("tags.*").trim().escape(), getPostsByTags);
 

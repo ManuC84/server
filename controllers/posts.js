@@ -1,9 +1,7 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const { update } = require("../models/postMessage.js");
 const Post = require("../models/postMessage.js");
 const { fetchMetadata } = require("../utils/fetchMetadata.js");
 
+//GET ALL POSTS
 exports.getPosts = async (req, res) => {
   try {
     const skip =
@@ -20,10 +18,10 @@ exports.getPosts = async (req, res) => {
   }
 };
 
+//GET SINGLE POST
 exports.getSinglePost = async (req, res) => {
-  const { id: postId } = req.query;
+  const { id: postId } = req.params;
   const post = await Post.findById(postId);
-  console.log(post);
   if (!post) return res.status(404).json({ error: "This page doesn't exist" });
 
   try {
@@ -33,6 +31,7 @@ exports.getSinglePost = async (req, res) => {
   }
 };
 
+//CREATE POSTS OR FETCH IF ALREADY IN DATABASE
 exports.createPost = async (req, res) => {
   const { url: userUrl, creator } = req.body;
 
@@ -78,6 +77,7 @@ exports.createPost = async (req, res) => {
   }
 };
 
+//GET POSTS BY TAGS
 exports.getPostsByTags = async (req, res) => {
   try {
     const { tags } = req.body;
@@ -96,6 +96,7 @@ exports.getPostsByTags = async (req, res) => {
   }
 };
 
+//ADD TAGS TO POST
 exports.addTags = async (req, res) => {
   const { tag } = req.body;
   const { id } = req.params;
