@@ -9,6 +9,10 @@ const commentSchema = mongoose.Schema({
     type: [],
     default: [],
   },
+  commentReplies: {
+    type: [],
+    default: [],
+  },
   parentPostId: String,
   likes: {
     type: [String],

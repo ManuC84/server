@@ -8,7 +8,7 @@ const {
   addTags,
   getSinglePost,
 } = require("../controllers/posts.js");
-const { addComments } = require("../controllers/comments.js");
+const { addComments, getComments } = require("../controllers/comments.js");
 
 router.get("/", getPosts);
 
@@ -17,6 +17,8 @@ router.post("/", body("url").isURL().withMessage("Invalid Url"), createPost);
 router.get("/:id", getSinglePost);
 
 router.get("/:id/comments");
+
+router.get("/:id/comments", getComments);
 
 router.post("/:id/comments", addComments);
 

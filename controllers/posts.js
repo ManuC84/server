@@ -81,6 +81,7 @@ exports.createPost = async (req, res) => {
 exports.getPostsByTags = async (req, res) => {
   try {
     const { tags } = req.body;
+    console.log(tags);
     const lowerCaseTags = tags.map((tag) => tag.toLowerCase());
     const taggedPosts = await Post.find({ tags: { $all: lowerCaseTags } });
 
