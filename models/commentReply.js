@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
-const commentSchema = mongoose.Schema({
-  comment: {
+const commentReplySchema = mongoose.Schema({
+  commentReply: {
     type: String,
   },
   creator: {
@@ -9,6 +9,7 @@ const commentSchema = mongoose.Schema({
     default: [],
   },
   parentPostId: String,
+  parentCommentId: String,
   likes: {
     type: [String],
     default: [],
@@ -21,12 +22,8 @@ const commentSchema = mongoose.Schema({
     type: Date,
     default: new Date(),
   },
-  commentReplies: {
-    type: [],
-    default: [],
-  },
 });
 
-var Comment = mongoose.model("Comment", commentSchema);
+var CommentReply = mongoose.model("CommentReply", commentReplySchema);
 
-module.exports = Comment;
+module.exports = CommentReply;

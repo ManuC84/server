@@ -8,7 +8,12 @@ const {
   addTags,
   getSinglePost,
 } = require("../controllers/posts.js");
-const { addComments, getComments } = require("../controllers/comments.js");
+const {
+  addComments,
+  getComments,
+  addCommentReply,
+  getCommentReplies,
+} = require("../controllers/comments.js");
 
 router.get("/", getPosts);
 
@@ -21,6 +26,9 @@ router.get("/:id/comments");
 router.get("/:id/comments", getComments);
 
 router.post("/:id/comments", addComments);
+
+router.get("/:postId/comments/:commentId", getCommentReplies);
+router.post("/:postId/comments/:commentId", addCommentReply);
 
 router.post("/tags", body("tags.*").trim().escape(), getPostsByTags);
 
