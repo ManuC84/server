@@ -25,7 +25,11 @@ exports.addComments = async (req, res) => {
     parentPostId,
   });
 
+  const post = await Post.findById(parentPostId);
+  post.comments.unshift(newComment);
+
   try {
+    await Post.findByIdAndUpdate(parentPostId, post, { new: true });
     await newComment.save();
 
     res.status(201).json(newComment);
@@ -60,7 +64,11 @@ exports.addCommentReply = async (req, res) => {
     parentCommentId,
   });
 
+  const comment = await Comment.findById(parentCommentId);
+  comment.commentReplies.unshift(newCommentReply);
+
   try {
+    await Comment.findByIdAndUpdate(parentCommentId, comment, { new: true });
     await newCommentReply.save();
     res.status(201).json(newCommentReply);
   } catch (error) {
