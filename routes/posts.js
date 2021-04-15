@@ -7,13 +7,10 @@ const {
   getPostsByTags,
   addTags,
   getSinglePost,
+  likePost,
 } = require("../controllers/posts.js");
-const {
-  addComments,
-  getComments,
-  addCommentReply,
-  getCommentReplies,
-} = require("../controllers/comments.js");
+const { addComments, addCommentReply } = require("../controllers/comments.js");
+const { auth } = require("../middleware/auth.js");
 
 router.get("/", getPosts);
 
@@ -23,15 +20,14 @@ router.get("/:id", getSinglePost);
 
 router.get("/:id/comments");
 
-router.get("/:id/comments", getComments);
+router.post("/:id/comments", auth, addComments);
 
-router.post("/:id/comments", addComments);
-
-router.get("/:postId/comments/:commentId", getCommentReplies);
-router.post("/:postId/comments/:commentId", addCommentReply);
+router.post("/:postId/comments/:commentId", auth, addCommentReply);
 
 router.post("/tags", body("tags.*").trim().escape(), getPostsByTags);
 
 router.post("/tags/addTags/:id", body("tag").trim().escape(), addTags);
+
+router.post("/:postId/likes", likePost);
 
 module.exports = router;

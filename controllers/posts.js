@@ -121,3 +121,26 @@ exports.addTags = async (req, res) => {
     res.status(404).json({ error: error.message });
   }
 };
+
+//LIKE POSTS
+exports.likePost = async (req, res) => {
+  const { userId } = req.body;
+  const { postId } = req.params;
+
+  const post = await Post.findById(postId);
+
+  const index = post.likes.findIndex((id) => id === String(userId));
+
+  if (index === -1) {
+    post.likes.push(userId);
+  } else {
+    post.likes = post.likes.filter((id) => id !== String(userId));
+  }
+
+  try {
+    await Post.findByIdAndUpdate(postId, post, { new: true });
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(400).json({ error: error });
+  }
+};
