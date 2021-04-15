@@ -129,12 +129,45 @@ exports.likePost = async (req, res) => {
 
   const post = await Post.findById(postId);
 
-  const index = post.likes.findIndex((id) => id === String(userId));
+  const likeIndex = post.likes.findIndex((id) => id === String(userId));
+  const dislikeIndex = post.dislikes.findIndex((id) => id === String(userId));
 
-  if (index === -1) {
+  if (dislikeIndex !== -1) {
+    post.dislikes = post.dislikes.filter((id) => id !== String(userId));
+  }
+
+  if (likeIndex === -1) {
     post.likes.push(userId);
   } else {
     post.likes = post.likes.filter((id) => id !== String(userId));
+  }
+
+  try {
+    await Post.findByIdAndUpdate(postId, post, { new: true });
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(400).json({ error: error });
+  }
+};
+
+//DISLIKE POSTS
+exports.dislikePost = async (req, res) => {
+  const { userId } = req.body;
+  const { postId } = req.params;
+
+  const post = await Post.findById(postId);
+
+  const dislikeIndex = post.dislikes.findIndex((id) => id === String(userId));
+  const likeIndex = post.likes.findIndex((id) => id === String(userId));
+
+  if (likeIndex !== -1) {
+    post.likes = post.likes.filter((id) => id !== String(userId));
+  }
+
+  if (dislikeIndex === -1) {
+    post.dislikes.push(userId);
+  } else {
+    post.dislikes = post.dislikes.filter((id) => id !== String(userId));
   }
 
   try {
