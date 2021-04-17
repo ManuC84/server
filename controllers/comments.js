@@ -43,3 +43,34 @@ exports.addCommentReply = async (req, res) => {
     res.status(409).json({ message: error.message });
   }
 };
+
+//LIKE COMMENTS
+exports.likeComment = async (req, res) => {
+  const { userId } = req.body;
+  const { postId, commentId } = req.params;
+
+  const post = await Post.findById(postId);
+  const comment = post.comments.id(commentId);
+
+  const likeIndex = comment.likes.findIndex((id) => id === String(userId));
+  const dislikeIndex = comment.dislikes.findIndex(
+    (id) => id === String(userId)
+  );
+
+  if (dislikeIndex !== -1) {
+    comment.dislikes = comment.dislikes.filter((id) => id !== String(userId));
+  }
+
+  if (likeIndex === -1) {
+    comment.likes.push(userId);
+  } else {
+    comment.likes = comment.likes.filter((id) => id !== String(userId));
+  }
+
+  try {
+    await Post.findByIdAndUpdate(postId, post, { new: true });
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(400).json({ error: error });
+  }
+};
