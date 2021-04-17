@@ -29,8 +29,8 @@ router.post("/tags", body("tags.*").trim().escape(), getPostsByTags);
 
 router.post("/tags/addTags/:id", body("tag").trim().escape(), addTags);
 
-router.post("/:postId/likes", likePost);
+router.post("/:postId/likes", auth, likePost);
 
-router.post("/:postId/dislikes", dislikePost);
+router.post("/:postId/dislikes", auth, dislikePost);
 
 module.exports = router;

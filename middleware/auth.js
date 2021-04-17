@@ -11,7 +11,6 @@ exports.auth = async (req, res, next) => {
     const isCustomAuth = token.length < 500;
 
     let decodedData;
-
     if (token && isCustomAuth) {
       decodedData = jwt.verify(token, process.env.TOKEN_SECRET);
 
@@ -25,7 +24,7 @@ exports.auth = async (req, res, next) => {
     next();
   } catch (error) {
     res.status(401).json({
-      error:
+      authError:
         "There's an issue with your authentication, please log in and try again",
     });
   }
