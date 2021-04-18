@@ -48,7 +48,6 @@ exports.addCommentReply = async (req, res) => {
 exports.likeComment = async (req, res) => {
   const { userId } = req.body;
   const { postId, commentId } = req.params;
-
   const post = await Post.findById(postId);
   const comment = post.comments.id(commentId);
 
@@ -96,6 +95,76 @@ exports.dislikeComment = async (req, res) => {
     comment.dislikes.push(userId);
   } else {
     comment.dislikes = comment.dislikes.filter((id) => id !== String(userId));
+  }
+
+  try {
+    await Post.findByIdAndUpdate(postId, post, { new: true });
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(400).json({ error: error });
+  }
+};
+
+//LIKE COMMENT REPLIES
+exports.likeCommentReply = async (req, res) => {
+  const { userId } = req.body;
+  const { postId, commentId, commentReplyId } = req.params;
+  const post = await Post.findById(postId);
+  const comment = post.comments.id(commentId);
+  const commentReply = comment.commentReplies.id(commentReplyId);
+
+  const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
+  const dislikeIndex = commentReply.dislikes.findIndex(
+    (id) => id === String(userId)
+  );
+
+  if (dislikeIndex !== -1) {
+    commentReply.dislikes = commentReply.dislikes.filter(
+      (id) => id !== String(userId)
+    );
+  }
+
+  if (likeIndex === -1) {
+    commentReply.likes.push(userId);
+  } else {
+    commentReply.likes = commentReply.likes.filter(
+      (id) => id !== String(userId)
+    );
+  }
+
+  try {
+    await Post.findByIdAndUpdate(postId, post, { new: true });
+    res.status(201).json(post);
+  } catch (error) {
+    res.status(400).json({ error: error });
+  }
+};
+
+//DISLIKE COMMENT REPLIES
+exports.dislikeCommentReply = async (req, res) => {
+  const { userId } = req.body;
+  const { postId, commentId, commentReplyId } = req.params;
+  const post = await Post.findById(postId);
+  const comment = post.comments.id(commentId);
+  const commentReply = comment.commentReplies.id(commentReplyId);
+
+  const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
+  const dislikeIndex = commentReply.dislikes.findIndex(
+    (id) => id === String(userId)
+  );
+
+  if (likeIndex !== -1) {
+    commentReply.likes = commentReply.likes.filter(
+      (id) => id !== String(userId)
+    );
+  }
+
+  if (dislikeIndex === -1) {
+    commentReply.dislikes.push(userId);
+  } else {
+    commentReply.dislikes = commentReply.dislikes.filter(
+      (id) => id !== String(userId)
+    );
   }
 
   try {

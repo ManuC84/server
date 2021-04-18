@@ -26,9 +26,9 @@ exports.auth = async (req, res, next) => {
         const ticket = await client.verifyIdToken({
           idToken: token,
         });
+
         const payload = ticket.getPayload();
         const userId = payload["sub"];
-
         if (userId) req.userId = userId;
       } catch (error) {
         res.status(401).json({

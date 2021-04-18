@@ -15,6 +15,8 @@ const {
   addCommentReply,
   likeComment,
   dislikeComment,
+  likeCommentReply,
+  dislikeCommentReply,
 } = require("../controllers/comments.js");
 const { auth } = require("../middleware/auth.js");
 
@@ -39,6 +41,19 @@ router.post("/:postId/likes", auth, likePost);
 router.post("/:postId/dislikes", auth, dislikePost);
 
 router.post("/:postId/comments/:commentId/likes", auth, likeComment);
+
 router.post("/:postId/comments/:commentId/dislikes", auth, dislikeComment);
+
+router.post(
+  "/:postId/comments/:commentId/commentReplies/:commentReplyId/likes",
+  auth,
+  likeCommentReply
+);
+
+router.post(
+  "/:postId/comments/:commentId/commentReplies/:commentReplyId/dislikes",
+  auth,
+  dislikeCommentReply
+);
 
 module.exports = router;
