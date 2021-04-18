@@ -1,14 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 
-async function verify() {
-  const ticket = await client.verifyIdToken({
-    idToken: token,
-  });
-  const payload = ticket.getPayload();
-  const userid = payload["sub"];
-}
-
 exports.auth = async (req, res, next) => {
   try {
     const token = req.headers.authorization.split(" ")[1];
@@ -35,10 +27,14 @@ exports.auth = async (req, res, next) => {
           idToken: token,
         });
         const payload = ticket.getPayload();
-        const userid = payload["sub"];
-        req.userId = userId;
+        const userId = payload["sub"];
+
+        if (userId) req.userId = userId;
       } catch (error) {
-        console.log(error);
+        res.status(401).json({
+          authError:
+            "There's an issue with your authentication, please log in and try again",
+        });
       }
     }
 
