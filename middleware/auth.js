@@ -1,13 +1,13 @@
 const jwt = require("jsonwebtoken");
 const { OAuth2Client } = require("google-auth-library");
 
-// async function verify() {
-//   const ticket = await client.verifyIdToken({
-//     idToken: token,
-//   });
-//   const payload = ticket.getPayload();
-//   const userid = payload["sub"];
-// }
+async function verify() {
+  const ticket = await client.verifyIdToken({
+    idToken: token,
+  });
+  const payload = ticket.getPayload();
+  const userid = payload["sub"];
+}
 
 exports.auth = async (req, res, next) => {
   try {
@@ -27,10 +27,19 @@ exports.auth = async (req, res, next) => {
 
       req.userId = decodedData?.id;
     } else {
-      decodedData = jwt.decode(token);
+      // decodedData = jwt.decode(token);
 
-      req.userId = decodedData?.sub;
-      // verify.catch(console.error);
+      // req.userId = decodedData?.sub;
+      try {
+        const ticket = await client.verifyIdToken({
+          idToken: token,
+        });
+        const payload = ticket.getPayload();
+        const userid = payload["sub"];
+        req.userId = userId;
+      } catch (error) {
+        console.log(error);
+      }
     }
 
     next();
