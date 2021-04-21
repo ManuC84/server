@@ -1,3 +1,4 @@
+const { findByIdAndDelete } = require("../models/postMessage.js");
 const Post = require("../models/postMessage.js");
 
 //POST COMMENTS
@@ -28,7 +29,7 @@ exports.addCommentReply = async (req, res) => {
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
 
   const post = await Post.findById(parentPostId);
-  post.comments.id(parentCommentId).commentReplies.unshift({
+  post.comments.id(parentCommentId).commentReplies.push({
     commentReply,
     creator,
     parentPostId,
@@ -224,4 +225,16 @@ exports.editCommentReply = async (req, res) => {
   } catch (error) {
     res.status(404).json({ error: error });
   }
+};
+
+//DELETE COMMENT
+exports.deleteComment = async (req, res) => {
+  const { postId, commentId } = req.params;
+  await Post.findById(postId, async function (err, post) {
+    if (!err) {
+      await post.comments.id(commentId).remove();
+      await post.save();
+      res.status(200).json(post);
+    }
+  });
 };
