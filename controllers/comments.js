@@ -198,3 +198,30 @@ exports.editComment = async (req, res) => {
     res.status(404).json({ error: error });
   }
 };
+
+//EDIT COMMENT REPLY
+exports.editCommentReply = async (req, res) => {
+  const { postId, commentId, commentReplyId } = req.params;
+  const { commentReplyText } = req.body;
+  const post = await Post.findById(postId);
+  let comment = post.comments.id(commentId);
+  const commentReply = comment.commentReplies.id(commentReplyId);
+  if (
+    req.userId !==
+    (commentReply.creator[0].data.result.googleId ||
+      commentReply.creator[0].data.result._id)
+  ) {
+    return res
+      .status(401)
+      .json({ error: "You are not authorized to perform that action" });
+  }
+  post.comments
+    .id(commentId)
+    .commentReplies.id(commentReplyId).commentReply = commentReplyText;
+  try {
+    await Post.findByIdAndUpdate(postId, post, { new: true });
+    res.status(200).json(post);
+  } catch (error) {
+    res.status(404).json({ error: error });
+  }
+};

@@ -18,6 +18,7 @@ const {
   likeCommentReply,
   dislikeCommentReply,
   editComment,
+  editCommentReply,
 } = require("../controllers/comments.js");
 const { auth } = require("../middleware/auth.js");
 
@@ -58,5 +59,11 @@ router.post(
 );
 
 router.put("/:postId/comments/:commentId/edit", auth, editComment);
+
+router.put(
+  "/:postId/comments/:commentId/commentReplies/:commentReplyId/edit",
+  auth,
+  editCommentReply
+);
 
 module.exports = router;
