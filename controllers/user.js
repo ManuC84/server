@@ -7,18 +7,27 @@ exports.signin = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    let errorMessages = {
+      emailError: "",
+      passwordError: "",
+    };
+
     const existingUser = await User.findOne({ email });
 
-    if (!existingUser)
-      return res.status(404).json({ message: "User doesn't exist" });
+    if (!existingUser) {
+      errorMessages.emailError = "User doesn't exist";
+      return res.status(400).json(errorMessages);
+    }
 
     const isPasswordCorrect = await bcrypt.compare(
       password,
       existingUser.password
     );
 
-    if (!isPasswordCorrect)
-      return res.status(400).json({ message: "Invalid credentials" });
+    if (!isPasswordCorrect) {
+      errorMessages.passwordError = "Invalid password";
+      return res.status(400).json(errorMessages);
+    }
 
     const token = jwt.sign(
       {
@@ -36,23 +45,40 @@ exports.signin = async (req, res) => {
 };
 
 exports.signup = async (req, res) => {
-  const { email, password, repeatPassword, firstName, lastName } = req.body;
+  const { email, password, repeatPassword, userName } = req.body;
 
   try {
-    const existingUser = await User.findOne({ email });
+    const existingEmail = await User.findOne({ email });
+    const existingUser = await User.findOne({ name: userName });
+
+    let errorMessages = {
+      userNameError: "",
+      emailError: "",
+      passwordError: "",
+    };
 
     if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
+      errorMessages.userNameError = "User name is already taken";
+
+    if (existingEmail)
+      errorMessages.emailError = "An user with that email already exists";
 
     if (password !== repeatPassword)
-      return res.status(400).json({ message: "Passwords don't match" });
+      errorMessages.passwordError = "Passwords don't match";
+
+    if (
+      errorMessages.userNameError ||
+      errorMessages.emailError ||
+      errorMessages.passwordError
+    )
+      return res.status(400).json(errorMessages);
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const result = await User.create({
       email,
       password: hashedPassword,
-      name: `${firstName} ${lastName}`,
+      name: userName,
     });
 
     const token = jwt.sign({ email: result.email, id: result._id }, jwtSecret, {
