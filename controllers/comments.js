@@ -238,3 +238,16 @@ exports.deleteComment = async (req, res) => {
     }
   });
 };
+//DELETE COMMENT
+exports.deleteCommentReply = async (req, res) => {
+  const { postId, commentId, commentReplyId } = req.params;
+  await Post.findById(postId, async function (err, post) {
+    if (!err) {
+      let comment = post.comments.id(commentId);
+      let commentReply = comment.commentReplies.id(commentReplyId);
+      await commentReply.remove();
+      await post.save();
+      res.status(200).json(post);
+    }
+  });
+};
