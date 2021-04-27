@@ -182,11 +182,7 @@ exports.editComment = async (req, res) => {
   const { commentText } = req.body;
   const post = await Post.findById(postId);
   let comment = post.comments.id(commentId);
-  if (
-    req.userId !==
-    (comment.creator[0].data.result.googleId ||
-      comment.creator[0].data.result._id)
-  ) {
+  if (req.userId !== (comment.creator[0].googleId || comment.creator[0]._id)) {
     return res
       .status(401)
       .json({ error: "You are not authorized to perform that action" });
@@ -209,8 +205,7 @@ exports.editCommentReply = async (req, res) => {
   const commentReply = comment.commentReplies.id(commentReplyId);
   if (
     req.userId !==
-    (commentReply.creator[0].data.result.googleId ||
-      commentReply.creator[0].data.result._id)
+    (commentReply.creator[0].googleId || commentReply.creator[0]._id)
   ) {
     return res
       .status(401)
