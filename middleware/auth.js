@@ -31,7 +31,7 @@ exports.auth = async (req, res, next) => {
         const userId = payload["sub"];
         if (userId) req.userId = userId;
       } catch (error) {
-        res.status(401).json({
+        return res.status(401).json({
           authError:
             "There's an issue with your authentication, please log in and try again",
         });
@@ -40,7 +40,7 @@ exports.auth = async (req, res, next) => {
 
     next();
   } catch (error) {
-    res.status(401).json({
+    return res.status(401).json({
       authError:
         "There's an issue with your authentication, please log in and try again",
     });
