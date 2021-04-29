@@ -33,7 +33,7 @@ exports.getSinglePost = async (req, res) => {
 
 //CREATE POSTS OR FETCH IF ALREADY IN DATABASE
 exports.createPost = async (req, res) => {
-  const { url: userUrl, creator } = req.body;
+  const { url: userUrl, creator, plugin } = req.body;
 
   const {
     description = "No description available",
@@ -61,13 +61,17 @@ exports.createPost = async (req, res) => {
     createdAt: new Date().toISOString(),
   });
 
-  //Must implement regex in order to avoid duplicates
-  const existingPost = await Post.find({ url: url });
+  try {
+    //Must implement regex in order to avoid duplicates
+    const existingPost = await Post.find({ url: url });
 
-  if (existingPost.length) {
-    res.status(201).json(existingPost);
-    return;
+    if (existingPost.length) return res.status(201).json(existingPost);
+  } catch (error) {
+    console.log(error);
   }
+
+  //Browser extension test to see if post already exists
+  if (plugin === "plugin-initial") return res.status(200).send();
 
   try {
     await newPost.save();
