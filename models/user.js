@@ -11,6 +11,10 @@ const userSchema = mongoose.Schema({
   },
   password: { type: String, required: true },
   id: { type: String },
+  notifications: {
+    type: [],
+    default: [],
+  },
 });
 
 var User = mongoose.model("User", userSchema);

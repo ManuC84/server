@@ -1,5 +1,6 @@
 const { findByIdAndDelete } = require("../models/postMessage.js");
 const Post = require("../models/postMessage.js");
+const User = require("../models/user.js");
 
 //POST COMMENTS
 exports.addComments = async (req, res) => {
@@ -29,6 +30,7 @@ exports.addCommentReply = async (req, res) => {
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
 
   const post = await Post.findById(parentPostId);
+
   post.comments.id(parentCommentId).commentReplies.push({
     commentReply,
     creator,
@@ -37,8 +39,15 @@ exports.addCommentReply = async (req, res) => {
     createdAt: new Date().toISOString(),
   });
 
+  const user = await User.findById(creator._id);
+
+  user.notifications.push({ commentReply, creator });
+
+  console.log(user);
+
   try {
     await Post.findByIdAndUpdate(parentPostId, post, { new: true });
+    await User.findByIdAndUpdate(creator._id, user, { new: true });
     res.status(201).json(post);
   } catch (error) {
     res.status(409).json({ message: error.message });
@@ -211,9 +220,8 @@ exports.editCommentReply = async (req, res) => {
       .status(401)
       .json({ error: "You are not authorized to perform that action" });
   }
-  post.comments
-    .id(commentId)
-    .commentReplies.id(commentReplyId).commentReply = commentReplyText;
+  post.comments.id(commentId).commentReplies.id(commentReplyId).commentReply =
+    commentReplyText;
   try {
     await Post.findByIdAndUpdate(postId, post, { new: true });
     res.status(200).json(post);
