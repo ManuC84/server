@@ -1,6 +1,8 @@
 const { findByIdAndDelete } = require("../models/postMessage.js");
 const Post = require("../models/postMessage.js");
 const User = require("../models/user.js");
+const socketApi = require("../socketApi");
+var sizeof = require("object-sizeof");
 
 //POST COMMENTS
 exports.addComments = async (req, res) => {
@@ -31,7 +33,9 @@ exports.addCommentReply = async (req, res) => {
 
   const post = await Post.findById(parentPostId);
 
-  post.comments.id(parentCommentId).commentReplies.push({
+  const comment = post.comments.id(parentCommentId);
+
+  comment.commentReplies.push({
     commentReply,
     creator,
     parentPostId,
@@ -39,16 +43,31 @@ exports.addCommentReply = async (req, res) => {
     createdAt: new Date().toISOString(),
   });
 
-  const user = await User.findById(creator._id);
+  const commentCreatorId = comment.creator[0]._id;
 
-  user.notifications.push({ commentReply, creator });
+  const commentCreator = await User.findById(commentCreatorId);
 
-  console.log(user);
+  if (commentCreatorId !== creator._id) {
+    commentCreator.notifications.push({
+      commentReply,
+      name: creator.name,
+      userId: creator._id,
+      createdAt: new Date().toISOString(),
+      parentCommentId,
+    });
+  }
+
+  socketApi.io.emit("user", JSON.stringify(commentCreator));
 
   try {
+    console.log("start db");
     await Post.findByIdAndUpdate(parentPostId, post, { new: true });
-    await User.findByIdAndUpdate(creator._id, user, { new: true });
+    await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
+      new: true,
+    });
+    console.log("finish db");
     res.status(201).json(post);
+    console.log("finish express send");
   } catch (error) {
     res.status(409).json({ message: error.message });
   }
