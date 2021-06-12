@@ -43,6 +43,9 @@ exports.addCommentReply = async (req, res) => {
     createdAt: new Date().toISOString(),
   });
 
+  const commentReplyId =
+    comment.commentReplies[comment.commentReplies.length - 1]._id;
+
   const commentCreatorId = comment.creator[0]._id;
 
   const commentCreator = await User.findById(commentCreatorId);
@@ -54,6 +57,9 @@ exports.addCommentReply = async (req, res) => {
       userId: creator._id,
       createdAt: new Date().toISOString(),
       parentCommentId,
+      parentPostId,
+      read: false,
+      commentReplyId,
     });
   }
 
