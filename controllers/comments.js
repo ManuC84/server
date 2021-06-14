@@ -51,7 +51,7 @@ exports.addCommentReply = async (req, res) => {
   const commentCreator = await User.findById(commentCreatorId);
 
   if (commentCreatorId !== creator._id) {
-    commentCreator.notifications.push({
+    commentCreator.notifications.unshift({
       commentReply,
       name: creator.name,
       userId: creator._id,
@@ -61,9 +61,8 @@ exports.addCommentReply = async (req, res) => {
       read: false,
       commentReplyId,
     });
+    socketApi.io.emit("user", JSON.stringify(commentCreator));
   }
-
-  socketApi.io.emit("user", JSON.stringify(commentCreator));
 
   try {
     console.log("start db");
@@ -278,4 +277,20 @@ exports.deleteCommentReply = async (req, res) => {
       res.status(200).json(post);
     }
   });
+};
+
+//FETCH NOTIFICATION
+exports.fetchNotification = async (req, res) => {
+  const { postId, commentId, commentReplyId } = req.params;
+  let post = await Post.findById(postId);
+  post.comments = post.comments.id(commentId);
+  post.comments[0].commentReplies = post.comments
+    .id(commentId)
+    .commentReplies.id(commentReplyId);
+
+  try {
+    res.status(200).send(post);
+  } catch (error) {
+    res.status(404).json({ error: error });
+  }
 };

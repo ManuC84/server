@@ -21,6 +21,7 @@ const {
   editCommentReply,
   deleteComment,
   deleteCommentReply,
+  fetchNotification,
 } = require("../controllers/comments.js");
 const { auth } = require("../middleware/auth.js");
 
@@ -69,10 +70,17 @@ router.put(
 );
 
 router.delete("/:postId/comments/:commentId/delete", auth, deleteComment);
+
 router.delete(
   "/:postId/comments/:commentId/commentReplies/:commentReplyId/delete",
   auth,
   deleteCommentReply
+);
+
+router.post(
+  "/:postId/comments/:commentId/commentReplies/:commentReplyId/notifications",
+  auth,
+  fetchNotification
 );
 
 module.exports = router;
