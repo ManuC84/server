@@ -1,8 +1,6 @@
-const { findByIdAndDelete } = require("../models/postMessage.js");
 const Post = require("../models/postMessage.js");
 const User = require("../models/user.js");
 const socketApi = require("../socketApi");
-var sizeof = require("object-sizeof");
 
 //POST COMMENTS
 exports.addComments = async (req, res) => {
@@ -293,4 +291,15 @@ exports.fetchNotification = async (req, res) => {
   } catch (error) {
     res.status(404).json({ error: error });
   }
+};
+
+//CLEAR ALL NOTIFICATIONS
+exports.clearAllNotifications = async (req, res) => {
+  const { userId } = req.params;
+  const user = User.findById(userId, async function (err, user) {
+    if (!err) {
+      user.notifications = [];
+      await user.save();
+    }
+  });
 };

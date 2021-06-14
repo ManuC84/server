@@ -22,6 +22,7 @@ const {
   deleteComment,
   deleteCommentReply,
   fetchNotification,
+  clearAllNotifications,
 } = require("../controllers/comments.js");
 const { auth } = require("../middleware/auth.js");
 
@@ -82,5 +83,7 @@ router.post(
   auth,
   fetchNotification
 );
+
+router.post("/:userId/clearAllNotifications", auth, clearAllNotifications);
 
 module.exports = router;
