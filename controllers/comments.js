@@ -24,7 +24,7 @@ exports.addComments = async (req, res) => {
   }
 };
 
-//POST COMMENT REPLIES
+//POST COMMENT REPLIES && HANDLE SOCKET NOTIFICATIONS
 exports.addCommentReply = async (req, res) => {
   const { commentReply, creator } = req.body;
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
@@ -279,12 +279,25 @@ exports.deleteCommentReply = async (req, res) => {
 
 //FETCH NOTIFICATION
 exports.fetchNotification = async (req, res) => {
-  const { postId, commentId, commentReplyId } = req.params;
+  const { postId, commentId, commentReplyId, userId } = req.params;
   let post = await Post.findById(postId);
   post.comments = post.comments.id(commentId);
   post.comments[0].commentReplies = post.comments
     .id(commentId)
     .commentReplies.id(commentReplyId);
+
+  await User.findById(userId, async function (err, user) {
+    if (!err) {
+      let updatedNotifications = user.notifications.map((notification) =>
+        notification.commentReplyId == commentReplyId
+          ? { ...notification, read: true }
+          : notification
+      );
+
+      user.notifications = updatedNotifications;
+      await user.save();
+    }
+  });
 
   try {
     res.status(200).send(post);
@@ -296,7 +309,7 @@ exports.fetchNotification = async (req, res) => {
 //CLEAR ALL NOTIFICATIONS
 exports.clearAllNotifications = async (req, res) => {
   const { userId } = req.params;
-  const user = User.findById(userId, async function (err, user) {
+  const user = await User.findById(userId, async function (err, user) {
     if (!err) {
       user.notifications = [];
       await user.save();

@@ -79,7 +79,7 @@ router.delete(
 );
 
 router.post(
-  "/:postId/comments/:commentId/commentReplies/:commentReplyId/notifications",
+  "/:postId/comments/:commentId/commentReplies/:commentReplyId/user/:userId/notifications",
   auth,
   fetchNotification
 );
