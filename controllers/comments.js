@@ -323,7 +323,7 @@ exports.clearAllNotifications = async (req, res) => {
         let updatedNotifications = user.notifications.map((notification) => {
           return { ...notification, read: true };
         });
-        console.log(updatedNotifications);
+
         user.notifications = updatedNotifications;
         await user.save();
       }
