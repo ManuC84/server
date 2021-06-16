@@ -309,10 +309,24 @@ exports.fetchNotification = async (req, res) => {
 //CLEAR ALL NOTIFICATIONS
 exports.clearAllNotifications = async (req, res) => {
   const { userId } = req.params;
-  const user = await User.findById(userId, async function (err, user) {
-    if (!err) {
-      user.notifications = [];
-      await user.save();
+  const { type } = req.body;
+  console.log(userId, type);
+  await User.findById(userId, async function (err, user) {
+    if (type == "clear") {
+      if (!err) {
+        user.notifications = [];
+        await user.save();
+      }
+    }
+    if (type == "read") {
+      if (!err) {
+        let updatedNotifications = user.notifications.map((notification) => {
+          return { ...notification, read: true };
+        });
+        console.log(updatedNotifications);
+        user.notifications = updatedNotifications;
+        await user.save();
+      }
     }
   });
 };
