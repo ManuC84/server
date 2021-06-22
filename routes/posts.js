@@ -11,6 +11,7 @@ const {
   dislikePost,
 } = require("../controllers/posts.js");
 const {
+  fetchComments,
   addComments,
   addCommentReply,
   likeComment,
@@ -32,7 +33,7 @@ router.post("/", body("url").isURL().withMessage("Invalid Url"), createPost);
 
 router.get("/:id", getSinglePost);
 
-router.get("/:id/comments");
+router.get("/:id/comments", fetchComments);
 
 router.post("/:id/comments", auth, addComments);
 

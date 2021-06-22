@@ -1,27 +1,35 @@
 const Post = require("../models/postMessage.js");
 const User = require("../models/user.js");
+const Comment = require("../models/comment.js");
 const socketApi = require("../socketApi");
+
+//FETCH COMMENTS
+exports.fetchComments = async (req, res) => {
+  const { id: parentPostId } = req.params;
+
+  Comment.find({ parentPostId: parentPostId }, function (err, comments) {
+    if (err) return res.status(400).json({ message: error.message });
+
+    res.status(200).json(comments);
+  });
+};
 
 //POST COMMENTS
 exports.addComments = async (req, res) => {
   const { comment, creator } = req.body;
   const { id: parentPostId } = req.params;
 
-  const post = await Post.findById(parentPostId);
-  post.comments.unshift({
+  const newComment = new Comment({
     comment,
     creator,
     parentPostId,
     createdAt: new Date().toISOString(),
   });
 
-  try {
-    await Post.findByIdAndUpdate(parentPostId, post, { new: true });
-
-    res.status(201).json(post);
-  } catch (error) {
-    res.status(409).json({ message: error.message });
-  }
+  newComment.save(function (err, comment) {
+    if (err) return res.status(409).json({ message: error.message });
+    res.status(201).json(comment);
+  });
 };
 
 //POST COMMENT REPLIES && HANDLE SOCKET NOTIFICATIONS
