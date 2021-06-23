@@ -1,6 +1,7 @@
 const Post = require("../models/postMessage.js");
 const User = require("../models/user.js");
 const Comment = require("../models/comment.js");
+const CommentReply = require("../models/commentReply.js");
 const socketApi = require("../socketApi");
 
 //FETCH COMMENTS
@@ -32,22 +33,40 @@ exports.addComments = async (req, res) => {
   });
 };
 
+//FETCH COMMENT REPLIES
+exports.fetchCommentReplies = async (req, res) => {
+  const { postId: parentPostId, commentId: parentCommentId } = req.params;
+
+  CommentReply.find({ parentCommentId }, function (err, commentReplies) {
+    if (err) return res.status(400).json({ message: error.message });
+
+    res.status(200).json(commentReplies);
+  });
+};
+
 //POST COMMENT REPLIES && HANDLE SOCKET NOTIFICATIONS
 exports.addCommentReply = async (req, res) => {
   const { commentReply, creator } = req.body;
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
 
-  const post = await Post.findById(parentPostId);
-
-  const comment = post.comments.id(parentCommentId);
-
-  comment.commentReplies.push({
+  //Save comment reply to db
+  const newCommentReply = new CommentReply({
     commentReply,
     creator,
     parentPostId,
     parentCommentId,
     createdAt: new Date().toISOString(),
   });
+
+  newCommentReply.save(function (err, commentReply) {
+    if (err) return res.status(409).json({ message: error.message });
+    res.status(201).json(commentReply);
+  });
+
+  //Notifications
+  const post = await Post.findById(parentPostId);
+
+  const comment = post.comments.id(parentCommentId);
 
   const commentReplyId =
     comment.commentReplies[comment.commentReplies.length - 1]._id;
@@ -71,14 +90,9 @@ exports.addCommentReply = async (req, res) => {
   }
 
   try {
-    console.log("start db");
-    await Post.findByIdAndUpdate(parentPostId, post, { new: true });
     await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
       new: true,
     });
-    console.log("finish db");
-    res.status(201).json(post);
-    console.log("finish express send");
   } catch (error) {
     res.status(409).json({ message: error.message });
   }
