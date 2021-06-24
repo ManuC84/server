@@ -38,7 +38,7 @@ router.get("/:id/comments", fetchComments);
 
 router.post("/:id/comments", auth, addComments);
 
-router.get("/:postId/comments/commentId/commentReplies", fetchCommentReplies);
+router.get("/:postId/comments/:commentId/commentReplies", fetchCommentReplies);
 
 router.post("/:postId/comments/:commentId", auth, addCommentReply);
 

@@ -36,12 +36,14 @@ exports.addComments = async (req, res) => {
 //FETCH COMMENT REPLIES
 exports.fetchCommentReplies = async (req, res) => {
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
+  CommentReply.find(
+    { parentCommentId: parentCommentId },
+    function (err, commentReplies) {
+      if (err) return res.status(400).json({ message: error.message });
 
-  CommentReply.find({ parentCommentId }, function (err, commentReplies) {
-    if (err) return res.status(400).json({ message: error.message });
-
-    res.status(200).json(commentReplies);
-  });
+      res.status(200).json(commentReplies);
+    }
+  );
 };
 
 //POST COMMENT REPLIES && HANDLE SOCKET NOTIFICATIONS
@@ -64,38 +66,38 @@ exports.addCommentReply = async (req, res) => {
   });
 
   //Notifications
-  const post = await Post.findById(parentPostId);
+  // const post = await Post.findById(parentPostId);
 
-  const comment = post.comments.id(parentCommentId);
+  // const comment = post.comments.id(parentCommentId);
 
-  const commentReplyId =
-    comment.commentReplies[comment.commentReplies.length - 1]._id;
+  // const commentReplyId =
+  //   comment.commentReplies[comment.commentReplies.length - 1]._id;
 
-  const commentCreatorId = comment.creator[0]._id;
+  // const commentCreatorId = comment.creator[0]._id;
 
-  const commentCreator = await User.findById(commentCreatorId);
+  // const commentCreator = await User.findById(commentCreatorId);
 
-  if (commentCreatorId !== creator._id) {
-    commentCreator.notifications.unshift({
-      commentReply,
-      name: creator.name,
-      userId: creator._id,
-      createdAt: new Date().toISOString(),
-      parentCommentId,
-      parentPostId,
-      read: false,
-      commentReplyId,
-    });
-    socketApi.io.emit("user", JSON.stringify(commentCreator));
-  }
+  // if (commentCreatorId !== creator._id) {
+  //   commentCreator.notifications.unshift({
+  //     commentReply,
+  //     name: creator.name,
+  //     userId: creator._id,
+  //     createdAt: new Date().toISOString(),
+  //     parentCommentId,
+  //     parentPostId,
+  //     read: false,
+  //     commentReplyId,
+  //   });
+  //   socketApi.io.emit("user", JSON.stringify(commentCreator));
+  // }
 
-  try {
-    await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
-      new: true,
-    });
-  } catch (error) {
-    res.status(409).json({ message: error.message });
-  }
+  // try {
+  //   await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
+  //     new: true,
+  //   });
+  // } catch (error) {
+  //   res.status(409).json({ message: error.message });
+  // }
 };
 
 //LIKE COMMENTS
@@ -332,7 +334,6 @@ exports.fetchNotification = async (req, res) => {
 exports.clearAllNotifications = async (req, res) => {
   const { userId } = req.params;
   const { type } = req.body;
-  console.log(userId, type);
   await User.findById(userId, async function (err, user) {
     if (type == "clear") {
       if (!err) {
