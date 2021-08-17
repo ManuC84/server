@@ -103,7 +103,8 @@ exports.addCommentReply = async (req, res) => {
 //LIKE COMMENTS
 exports.likeComment = async (req, res) => {
   const { userId } = req.body;
-  const { postId, commentId } = req.params;
+  console.log(userId);
+  const { commentId } = req.params;
   const comment = await Comment.findById(commentId);
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
