@@ -103,7 +103,6 @@ exports.addCommentReply = async (req, res) => {
 //LIKE COMMENTS
 exports.likeComment = async (req, res) => {
   const { userId } = req.body;
-  console.log(userId);
   const { commentId } = req.params;
   const comment = await Comment.findById(commentId);
 
@@ -133,10 +132,9 @@ exports.likeComment = async (req, res) => {
 //DISLIKE COMMENTS
 exports.dislikeComment = async (req, res) => {
   const { userId } = req.body;
-  const { postId, commentId } = req.params;
+  const { commentId } = req.params;
 
-  const post = await Post.findById(postId);
-  const comment = post.comments.id(commentId);
+  const comment = await Comment.findById(commentId);
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = comment.dislikes.findIndex(
@@ -154,8 +152,8 @@ exports.dislikeComment = async (req, res) => {
   }
 
   try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(201).json(post);
+    await Comment.findByIdAndUpdate(commentId, comment, { new: true });
+    res.status(201).json(comment);
   } catch (error) {
     res.status(400).json({ error: error });
   }
