@@ -233,17 +233,17 @@ exports.dislikeCommentReply = async (req, res) => {
 exports.editComment = async (req, res) => {
   const { postId, commentId } = req.params;
   const { commentText } = req.body;
-  const post = await Post.findById(postId);
-  let comment = post.comments.id(commentId);
+  const comment = await Comment.findById(commentId);
+
   if (req.userId !== (comment.creator[0].googleId || comment.creator[0]._id)) {
     return res
       .status(401)
       .json({ error: "You are not authorized to perform that action" });
   }
-  post.comments.id(commentId).comment = commentText;
+  comment.comment = commentText;
   try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(200).json(post);
+    await Comment.findByIdAndUpdate(commentId, comment, { new: true });
+    res.status(200).json(comment);
   } catch (error) {
     res.status(404).json({ error: error });
   }
