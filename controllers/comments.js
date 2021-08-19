@@ -277,15 +277,15 @@ exports.editCommentReply = async (req, res) => {
 //DELETE COMMENT
 exports.deleteComment = async (req, res) => {
   const { postId, commentId } = req.params;
-  await Post.findById(postId, async function (err, post) {
+  await Comment.findById(commentId, async function (err, comment) {
     if (!err) {
-      await post.comments.id(commentId).remove();
-      await post.save();
-      res.status(200).json(post);
+      await comment.remove();
+      res.status(200).json(comment);
     }
   });
 };
-//DELETE COMMENT
+
+//DELETE COMMENT REPLY
 exports.deleteCommentReply = async (req, res) => {
   const { postId, commentId, commentReplyId } = req.params;
   await Post.findById(postId, async function (err, post) {
