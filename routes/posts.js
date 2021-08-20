@@ -13,19 +13,25 @@ const {
 const {
   fetchComments,
   addComments,
-  fetchCommentReplies,
-  addCommentReply,
+
   likeComment,
   dislikeComment,
+
+  editComment,
+
+  deleteComment,
+} = require("../controllers/comments.js");
+
+const {
+  fetchCommentReplies,
+  addCommentReply,
   likeCommentReply,
   dislikeCommentReply,
-  editComment,
   editCommentReply,
-  deleteComment,
   deleteCommentReply,
   fetchNotification,
   clearAllNotifications,
-} = require("../controllers/comments.js");
+} = require("../controllers/commentReplies.js");
 const { auth } = require("../middleware/auth.js");
 
 router.get("/", getPosts);
