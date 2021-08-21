@@ -6,7 +6,7 @@ exports.auth = async (req, res, next) => {
     const token = req.headers.authorization.split(" ")[1];
     if (!token) {
       return res
-        .status(403)
+        .status(401)
         .json({ error: "You need to be logged in to proceed" });
     }
     const isCustomAuth = token.length < 500;
