@@ -107,9 +107,7 @@ exports.likeCommentReply = async (req, res) => {
 exports.dislikeCommentReply = async (req, res) => {
   const { userId } = req.body;
   const { postId, commentId, commentReplyId } = req.params;
-  const post = await Post.findById(postId);
-  const comment = post.comments.id(commentId);
-  const commentReply = comment.commentReplies.id(commentReplyId);
+  const commentReply = await CommentReply.findById(commentReplyId);
 
   const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = commentReply.dislikes.findIndex(
@@ -131,8 +129,10 @@ exports.dislikeCommentReply = async (req, res) => {
   }
 
   try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(201).json(post);
+    await CommentReply.findByIdAndUpdate(commentReplyId, commentReply, {
+      new: true,
+    });
+    res.status(201).json(commentReply);
   } catch (error) {
     res.status(400).json({ error: error });
   }
