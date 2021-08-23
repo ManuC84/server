@@ -165,15 +165,16 @@ exports.editCommentReply = async (req, res) => {
 //DELETE COMMENT REPLY
 exports.deleteCommentReply = async (req, res) => {
   const { postId, commentId, commentReplyId } = req.params;
-  await Post.findById(postId, async function (err, post) {
-    if (!err) {
-      let comment = post.comments.id(commentId);
-      let commentReply = comment.commentReplies.id(commentReplyId);
-      await commentReply.remove();
-      await post.save();
-      res.status(200).json(post);
+  await CommentReply.findById(
+    commentReplyId,
+    async function (err, commentReply) {
+      if (!err) {
+        await commentReply.remove();
+
+        res.status(200).json(commentReply);
+      }
     }
-  });
+  );
 };
 
 //FETCH NOTIFICATION
