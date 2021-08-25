@@ -2,17 +2,28 @@ const Post = require("../models/postMessage.js");
 const User = require("../models/user.js");
 const Comment = require("../models/comment.js");
 const CommentReply = require("../models/commentReply.js");
-const socketApi = require("../socketApi");
 
 //FETCH COMMENTS
 exports.fetchComments = async (req, res) => {
   const { id: parentPostId } = req.params;
 
-  Comment.find({ parentPostId: parentPostId }, function (err, comments) {
-    if (err) return res.status(400).json({ message: error.message });
+  Comment.find({ parentPostId: parentPostId }, function (error, comments) {
+    if (error) return res.status(400).json({ message: error.message });
 
     res.status(200).json(comments);
   });
+};
+
+//FETCH SINGLE COMMENT
+exports.fetchSingleComment = async (req, res) => {
+  const { commentId } = req.params;
+
+  const comment = await Comment.findById(commentId);
+  try {
+    res.status(200).json([comment]);
+  } catch (error) {
+    res.status(404).json({ error: error });
+  }
 };
 
 //POST COMMENTS

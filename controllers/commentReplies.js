@@ -1,4 +1,6 @@
 const CommentReply = require("../models/commentReply.js");
+const Comment = require("../models/comment.js");
+const User = require("../models/user.js");
 const socketApi = require("../socketApi");
 
 //FETCH COMMENT REPLIES
@@ -6,8 +8,8 @@ exports.fetchCommentReplies = async (req, res) => {
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
   CommentReply.find(
     { parentCommentId: parentCommentId },
-    function (err, commentReplies) {
-      if (err) return res.status(400).json({ message: error.message });
+    function (error, commentReplies) {
+      if (error) return res.status(400).json({ message: error.message });
 
       res.status(200).json(commentReplies);
     }
@@ -33,39 +35,38 @@ exports.addCommentReply = async (req, res) => {
     res.status(201).json(commentReply);
   });
 
-  //Notifications
-  // const post = await Post.findById(parentPostId);
+  // Notifications
 
-  // const comment = post.comments.id(parentCommentId);
+  const comment = await Comment.findById(parentCommentId);
 
-  // const commentReplyId =
-  //   comment.commentReplies[comment.commentReplies.length - 1]._id;
+  const commentReplyId = newCommentReply._id;
+  console.log(comment.creator);
 
-  // const commentCreatorId = comment.creator[0]._id;
+  const commentCreatorId = comment.creator[0]._id;
 
-  // const commentCreator = await User.findById(commentCreatorId);
+  const commentCreator = await User.findById(commentCreatorId);
 
-  // if (commentCreatorId !== creator._id) {
-  //   commentCreator.notifications.unshift({
-  //     commentReply,
-  //     name: creator.name,
-  //     userId: creator._id,
-  //     createdAt: new Date().toISOString(),
-  //     parentCommentId,
-  //     parentPostId,
-  //     read: false,
-  //     commentReplyId,
-  //   });
-  //   socketApi.io.emit("user", JSON.stringify(commentCreator));
-  // }
+  if (commentCreatorId !== creator._id) {
+    commentCreator.notifications.unshift({
+      commentReply,
+      name: creator.name,
+      userId: creator._id,
+      createdAt: new Date().toISOString(),
+      parentCommentId,
+      parentPostId,
+      read: false,
+      commentReplyId,
+    });
+    socketApi.io.emit("user", JSON.stringify(commentCreator));
+  }
 
-  // try {
-  //   await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
-  //     new: true,
-  //   });
-  // } catch (error) {
-  //   res.status(409).json({ message: error.message });
-  // }
+  try {
+    await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
+      new: true,
+    });
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
 };
 
 //LIKE COMMENT REPLIES
@@ -175,57 +176,4 @@ exports.deleteCommentReply = async (req, res) => {
       }
     }
   );
-};
-
-//FETCH NOTIFICATION
-exports.fetchNotification = async (req, res) => {
-  const { postId, commentId, commentReplyId, userId } = req.params;
-  let post = await Post.findById(postId);
-  post.comments = post.comments.id(commentId);
-  post.comments[0].commentReplies = post.comments
-    .id(commentId)
-    .commentReplies.id(commentReplyId);
-
-  await User.findById(userId, async function (err, user) {
-    if (!err) {
-      let updatedNotifications = user.notifications.map((notification) =>
-        notification.commentReplyId == commentReplyId
-          ? { ...notification, read: true }
-          : notification
-      );
-
-      user.notifications = updatedNotifications;
-      await user.save();
-    }
-  });
-
-  try {
-    res.status(200).send(post);
-  } catch (error) {
-    res.status(404).json({ error: error });
-  }
-};
-
-//CLEAR ALL NOTIFICATIONS
-exports.clearAllNotifications = async (req, res) => {
-  const { userId } = req.params;
-  const { type } = req.body;
-  await User.findById(userId, async function (err, user) {
-    if (type == "clear") {
-      if (!err) {
-        user.notifications = [];
-        await user.save();
-      }
-    }
-    if (type == "read") {
-      if (!err) {
-        let updatedNotifications = user.notifications.map((notification) => {
-          return { ...notification, read: true };
-        });
-
-        user.notifications = updatedNotifications;
-        await user.save();
-      }
-    }
-  });
 };

@@ -20,6 +20,7 @@ const {
   editComment,
 
   deleteComment,
+  fetchSingleComment,
 } = require("../controllers/comments.js");
 
 const {
@@ -29,9 +30,11 @@ const {
   dislikeCommentReply,
   editCommentReply,
   deleteCommentReply,
+} = require("../controllers/commentReplies.js");
+const {
   fetchNotification,
   clearAllNotifications,
-} = require("../controllers/commentReplies.js");
+} = require("../controllers/notifications.js");
 const { auth } = require("../middleware/auth.js");
 
 router.get("/", getPosts);
@@ -41,6 +44,8 @@ router.post("/", body("url").isURL().withMessage("Invalid Url"), createPost);
 router.get("/:id", getSinglePost);
 
 router.get("/:id/comments", fetchComments);
+
+router.get("/:postId/comments/:commentId", fetchSingleComment);
 
 router.post("/:id/comments", auth, addComments);
 
