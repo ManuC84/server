@@ -16,6 +16,18 @@ exports.fetchCommentReplies = async (req, res) => {
   );
 };
 
+//FETCH SINGLE COMMENT REPLY
+exports.fetchSingleCommentReply = async (req, res) => {
+  const { commentReplyId } = req.params;
+
+  const commentReply = await CommentReply.findById(commentReplyId);
+  try {
+    res.status(200).json([commentReply]);
+  } catch (error) {
+    res.status(404).json({ error: error });
+  }
+};
+
 //POST COMMENT REPLIES && HANDLE SOCKET NOTIFICATIONS
 exports.addCommentReply = async (req, res) => {
   const { commentReply, creator } = req.body;

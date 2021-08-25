@@ -30,6 +30,7 @@ const {
   dislikeCommentReply,
   editCommentReply,
   deleteCommentReply,
+  fetchSingleCommentReply,
 } = require("../controllers/commentReplies.js");
 const {
   fetchNotification,
@@ -50,6 +51,11 @@ router.get("/:postId/comments/:commentId", fetchSingleComment);
 router.post("/:id/comments", auth, addComments);
 
 router.get("/:postId/comments/:commentId/commentReplies", fetchCommentReplies);
+
+router.get(
+  "/:postId/comments/:commentId/commentReplies/:commentReplyId",
+  fetchSingleCommentReply
+);
 
 router.post("/:postId/comments/:commentId", auth, addCommentReply);
 
