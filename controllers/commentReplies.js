@@ -52,7 +52,6 @@ exports.addCommentReply = async (req, res) => {
   const comment = await Comment.findById(parentCommentId);
 
   const commentReplyId = newCommentReply._id;
-  console.log(comment.creator);
 
   const commentCreatorId = comment.creator[0]._id;
 

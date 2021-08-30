@@ -7,10 +7,6 @@ const CommentReply = require("../models/commentReply.js");
 exports.fetchNotification = async (req, res) => {
   const { postId, commentId, commentReplyId, userId } = req.params;
   let post = await Post.findById(postId);
-  // post.comments = post.comments.id(commentId);
-  //   post.comments[0].commentReplies = post.comments
-  //     .id(commentId)
-  //     .commentReplies.id(commentReplyId);
 
   await User.findById(userId, async function (err, user) {
     if (!err) {
