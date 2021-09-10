@@ -1,7 +1,8 @@
-const CommentReply = require("../models/commentReply.js");
-const Comment = require("../models/comment.js");
-const User = require("../models/user.js");
-const socketApi = require("../socketApi");
+const CommentReply = require('../models/commentReply.js');
+const Comment = require('../models/comment.js');
+const User = require('../models/user.js');
+const Notification = require('../models/notification.js');
+const socketApi = require('../socketApi');
 
 //FETCH COMMENT REPLIES
 exports.fetchCommentReplies = async (req, res) => {
@@ -12,7 +13,7 @@ exports.fetchCommentReplies = async (req, res) => {
       if (error) return res.status(400).json({ message: error.message });
 
       res.status(200).json(commentReplies);
-    }
+    },
   );
 };
 
@@ -68,7 +69,19 @@ exports.addCommentReply = async (req, res) => {
       read: false,
       commentReplyId,
     });
-    socketApi.io.emit("user", JSON.stringify(commentCreator));
+
+    const newNotification = new Notification({
+      commentReply,
+      name: creator.name,
+      userId: creator._id,
+      createdAt: new Date().toISOString(),
+      parentCommentId,
+      parentPostId,
+      read: false,
+      commentReplyId,
+    });
+    await newNotification.save();
+    socketApi.io.emit('user', JSON.stringify(commentCreator));
   }
 
   try {
@@ -88,12 +101,12 @@ exports.likeCommentReply = async (req, res) => {
 
   const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = commentReply.dislikes.findIndex(
-    (id) => id === String(userId)
+    (id) => id === String(userId),
   );
 
   if (dislikeIndex !== -1) {
     commentReply.dislikes = commentReply.dislikes.filter(
-      (id) => id !== String(userId)
+      (id) => id !== String(userId),
     );
   }
 
@@ -101,7 +114,7 @@ exports.likeCommentReply = async (req, res) => {
     commentReply.likes.push(userId);
   } else {
     commentReply.likes = commentReply.likes.filter(
-      (id) => id !== String(userId)
+      (id) => id !== String(userId),
     );
   }
 
@@ -123,12 +136,12 @@ exports.dislikeCommentReply = async (req, res) => {
 
   const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = commentReply.dislikes.findIndex(
-    (id) => id === String(userId)
+    (id) => id === String(userId),
   );
 
   if (likeIndex !== -1) {
     commentReply.likes = commentReply.likes.filter(
-      (id) => id !== String(userId)
+      (id) => id !== String(userId),
     );
   }
 
@@ -136,7 +149,7 @@ exports.dislikeCommentReply = async (req, res) => {
     commentReply.dislikes.push(userId);
   } else {
     commentReply.dislikes = commentReply.dislikes.filter(
-      (id) => id !== String(userId)
+      (id) => id !== String(userId),
     );
   }
 
@@ -161,7 +174,7 @@ exports.editCommentReply = async (req, res) => {
   ) {
     return res
       .status(401)
-      .json({ error: "You are not authorized to perform that action" });
+      .json({ error: 'You are not authorized to perform that action' });
   }
   commentReply.commentReply = commentReplyText;
   try {
@@ -185,6 +198,6 @@ exports.deleteCommentReply = async (req, res) => {
 
         res.status(200).json(commentReply);
       }
-    }
+    },
   );
 };
