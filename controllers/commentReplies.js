@@ -77,6 +77,7 @@ exports.addCommentReply = async (req, res) => {
       createdAt: new Date().toISOString(),
       parentCommentId,
       parentPostId,
+      parentUserId: commentCreatorId,
       read: false,
       commentReplyId,
     });

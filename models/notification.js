@@ -7,6 +7,7 @@ const notificationsSchema = mongoose.Schema({
   createdAt: { type: Date, default: new Date() },
   parentCommentId: { type: String },
   parentPostId: { type: String },
+  parentUserId: { type: String },
   read: false,
   commentReplyId: { type: String },
 });
