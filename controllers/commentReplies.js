@@ -34,6 +34,8 @@ exports.addCommentReply = async (req, res) => {
   const { commentReply, creator } = req.body;
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
 
+  console.log(creator);
+
   //Save comment reply to db
   const newCommentReply = new CommentReply({
     commentReply,
@@ -56,19 +58,19 @@ exports.addCommentReply = async (req, res) => {
 
   const commentCreatorId = comment.creator[0]._id;
 
-  const commentCreator = await User.findById(commentCreatorId);
+  // const commentCreator = await User.findById(commentCreatorId);
 
   if (commentCreatorId !== creator._id) {
-    commentCreator.notifications.unshift({
-      commentReply,
-      name: creator.name,
-      userId: creator._id,
-      createdAt: new Date().toISOString(),
-      parentCommentId,
-      parentPostId,
-      read: false,
-      commentReplyId,
-    });
+    // commentCreator.notifications.unshift({
+    //   commentReply,
+    //   name: creator.name,
+    //   userId: creator._id,
+    //   createdAt: new Date().toISOString(),
+    //   parentCommentId,
+    //   parentPostId,
+    //   read: false,
+    //   commentReplyId,
+    // });
 
     const newNotification = new Notification({
       commentReply,
@@ -82,16 +84,16 @@ exports.addCommentReply = async (req, res) => {
       commentReplyId,
     });
     await newNotification.save();
-    socketApi.io.emit('user', JSON.stringify(commentCreator));
+    socketApi.io.emit('user', newNotification);
   }
 
-  try {
-    await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
-      new: true,
-    });
-  } catch (error) {
-    res.status(409).json({ message: error.message });
-  }
+  // try {
+  //   await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
+  //     new: true,
+  //   });
+  // } catch (error) {
+  //   res.status(409).json({ message: error.message });
+  // }
 };
 
 //LIKE COMMENT REPLIES
