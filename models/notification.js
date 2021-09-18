@@ -10,6 +10,7 @@ const notificationsSchema = mongoose.Schema({
   parentUserId: { type: String },
   read: false,
   commentReplyId: { type: String },
+  imageUrl: { type: String },
 });
 
 var Notification = mongoose.model('Notification', notificationsSchema);

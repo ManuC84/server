@@ -82,6 +82,7 @@ exports.addCommentReply = async (req, res) => {
       parentUserId: commentCreatorId,
       read: false,
       commentReplyId,
+      imageUrl: creator.imageUrl,
     });
     await newNotification.save();
     socketApi.io.emit('user', newNotification);
