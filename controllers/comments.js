@@ -1,91 +1,59 @@
-const Post = require("../models/postMessage.js");
-const User = require("../models/user.js");
-const socketApi = require("../socketApi");
+const Post = require('../models/postMessage.js');
+const User = require('../models/user.js');
+const Comment = require('../models/comment.js');
+const CommentReply = require('../models/commentReply.js');
+const Notification = require('../models/notification.js');
+
+//FETCH COMMENTS
+exports.fetchComments = async (req, res) => {
+  const { id: parentPostId } = req.params;
+
+  Comment.find({ parentPostId: parentPostId }, function (error, comments) {
+    if (error) return res.status(400).json({ message: error.message });
+
+    res.status(200).json(comments);
+  });
+};
+
+//FETCH SINGLE COMMENT
+exports.fetchSingleComment = async (req, res) => {
+  const { commentId } = req.params;
+
+  try {
+    const comment = await Comment.findById(commentId);
+    res.status(200).json([comment]);
+  } catch (error) {
+    res.status(404).json({ error: error });
+  }
+};
 
 //POST COMMENTS
 exports.addComments = async (req, res) => {
   const { comment, creator } = req.body;
   const { id: parentPostId } = req.params;
 
-  const post = await Post.findById(parentPostId);
-  post.comments.unshift({
+  const newComment = new Comment({
     comment,
     creator,
     parentPostId,
     createdAt: new Date().toISOString(),
   });
 
-  try {
-    await Post.findByIdAndUpdate(parentPostId, post, { new: true });
-
-    res.status(201).json(post);
-  } catch (error) {
-    res.status(409).json({ message: error.message });
-  }
-};
-
-//POST COMMENT REPLIES && HANDLE SOCKET NOTIFICATIONS
-exports.addCommentReply = async (req, res) => {
-  const { commentReply, creator } = req.body;
-  const { postId: parentPostId, commentId: parentCommentId } = req.params;
-
-  const post = await Post.findById(parentPostId);
-
-  const comment = post.comments.id(parentCommentId);
-
-  comment.commentReplies.push({
-    commentReply,
-    creator,
-    parentPostId,
-    parentCommentId,
-    createdAt: new Date().toISOString(),
+  newComment.save(function (err, comment) {
+    if (err) return res.status(409).json({ message: error.message });
+    res.status(201).json(comment);
   });
-
-  const commentReplyId =
-    comment.commentReplies[comment.commentReplies.length - 1]._id;
-
-  const commentCreatorId = comment.creator[0]._id;
-
-  const commentCreator = await User.findById(commentCreatorId);
-
-  if (commentCreatorId !== creator._id) {
-    commentCreator.notifications.unshift({
-      commentReply,
-      name: creator.name,
-      userId: creator._id,
-      createdAt: new Date().toISOString(),
-      parentCommentId,
-      parentPostId,
-      read: false,
-      commentReplyId,
-    });
-    socketApi.io.emit("user", JSON.stringify(commentCreator));
-  }
-
-  try {
-    console.log("start db");
-    await Post.findByIdAndUpdate(parentPostId, post, { new: true });
-    await User.findByIdAndUpdate(commentCreatorId, commentCreator, {
-      new: true,
-    });
-    console.log("finish db");
-    res.status(201).json(post);
-    console.log("finish express send");
-  } catch (error) {
-    res.status(409).json({ message: error.message });
-  }
 };
 
 //LIKE COMMENTS
 exports.likeComment = async (req, res) => {
   const { userId } = req.body;
-  const { postId, commentId } = req.params;
-  const post = await Post.findById(postId);
-  const comment = post.comments.id(commentId);
+  const { commentId } = req.params;
+  const comment = await Comment.findById(commentId);
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = comment.dislikes.findIndex(
-    (id) => id === String(userId)
+    (id) => id === String(userId),
   );
 
   if (dislikeIndex !== -1) {
@@ -99,8 +67,8 @@ exports.likeComment = async (req, res) => {
   }
 
   try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(201).json(post);
+    await Comment.findByIdAndUpdate(commentId, comment, { new: true });
+    res.status(201).json(comment);
   } catch (error) {
     res.status(400).json({ error: error });
   }
@@ -109,14 +77,13 @@ exports.likeComment = async (req, res) => {
 //DISLIKE COMMENTS
 exports.dislikeComment = async (req, res) => {
   const { userId } = req.body;
-  const { postId, commentId } = req.params;
+  const { commentId } = req.params;
 
-  const post = await Post.findById(postId);
-  const comment = post.comments.id(commentId);
+  const comment = await Comment.findById(commentId);
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = comment.dislikes.findIndex(
-    (id) => id === String(userId)
+    (id) => id === String(userId),
   );
 
   if (likeIndex !== -1) {
@@ -130,78 +97,8 @@ exports.dislikeComment = async (req, res) => {
   }
 
   try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(201).json(post);
-  } catch (error) {
-    res.status(400).json({ error: error });
-  }
-};
-
-//LIKE COMMENT REPLIES
-exports.likeCommentReply = async (req, res) => {
-  const { userId } = req.body;
-  const { postId, commentId, commentReplyId } = req.params;
-  const post = await Post.findById(postId);
-  const comment = post.comments.id(commentId);
-  const commentReply = comment.commentReplies.id(commentReplyId);
-
-  const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
-  const dislikeIndex = commentReply.dislikes.findIndex(
-    (id) => id === String(userId)
-  );
-
-  if (dislikeIndex !== -1) {
-    commentReply.dislikes = commentReply.dislikes.filter(
-      (id) => id !== String(userId)
-    );
-  }
-
-  if (likeIndex === -1) {
-    commentReply.likes.push(userId);
-  } else {
-    commentReply.likes = commentReply.likes.filter(
-      (id) => id !== String(userId)
-    );
-  }
-
-  try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(201).json(post);
-  } catch (error) {
-    res.status(400).json({ error: error });
-  }
-};
-
-//DISLIKE COMMENT REPLIES
-exports.dislikeCommentReply = async (req, res) => {
-  const { userId } = req.body;
-  const { postId, commentId, commentReplyId } = req.params;
-  const post = await Post.findById(postId);
-  const comment = post.comments.id(commentId);
-  const commentReply = comment.commentReplies.id(commentReplyId);
-
-  const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
-  const dislikeIndex = commentReply.dislikes.findIndex(
-    (id) => id === String(userId)
-  );
-
-  if (likeIndex !== -1) {
-    commentReply.likes = commentReply.likes.filter(
-      (id) => id !== String(userId)
-    );
-  }
-
-  if (dislikeIndex === -1) {
-    commentReply.dislikes.push(userId);
-  } else {
-    commentReply.dislikes = commentReply.dislikes.filter(
-      (id) => id !== String(userId)
-    );
-  }
-
-  try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(201).json(post);
+    await Comment.findByIdAndUpdate(commentId, comment, { new: true });
+    res.status(201).json(comment);
   } catch (error) {
     res.status(400).json({ error: error });
   }
@@ -211,42 +108,17 @@ exports.dislikeCommentReply = async (req, res) => {
 exports.editComment = async (req, res) => {
   const { postId, commentId } = req.params;
   const { commentText } = req.body;
-  const post = await Post.findById(postId);
-  let comment = post.comments.id(commentId);
+  const comment = await Comment.findById(commentId);
+
   if (req.userId !== (comment.creator[0].googleId || comment.creator[0]._id)) {
     return res
       .status(401)
-      .json({ error: "You are not authorized to perform that action" });
+      .json({ error: 'You are not authorized to perform that action' });
   }
-  post.comments.id(commentId).comment = commentText;
+  comment.comment = commentText;
   try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(200).json(post);
-  } catch (error) {
-    res.status(404).json({ error: error });
-  }
-};
-
-//EDIT COMMENT REPLY
-exports.editCommentReply = async (req, res) => {
-  const { postId, commentId, commentReplyId } = req.params;
-  const { commentReplyText } = req.body;
-  const post = await Post.findById(postId);
-  let comment = post.comments.id(commentId);
-  const commentReply = comment.commentReplies.id(commentReplyId);
-  if (
-    req.userId !==
-    (commentReply.creator[0].googleId || commentReply.creator[0]._id)
-  ) {
-    return res
-      .status(401)
-      .json({ error: "You are not authorized to perform that action" });
-  }
-  post.comments.id(commentId).commentReplies.id(commentReplyId).commentReply =
-    commentReplyText;
-  try {
-    await Post.findByIdAndUpdate(postId, post, { new: true });
-    res.status(200).json(post);
+    await Comment.findByIdAndUpdate(commentId, comment, { new: true });
+    res.status(200).json(comment);
   } catch (error) {
     res.status(404).json({ error: error });
   }
@@ -255,78 +127,20 @@ exports.editCommentReply = async (req, res) => {
 //DELETE COMMENT
 exports.deleteComment = async (req, res) => {
   const { postId, commentId } = req.params;
-  await Post.findById(postId, async function (err, post) {
+  await Notification.findOne(
+    {
+      parentCommentId: commentId,
+    },
+    async function (err, notification) {
+      if (!err) await notification.remove();
+    },
+  );
+
+  await Comment.findById(commentId, async function (err, comment) {
     if (!err) {
-      await post.comments.id(commentId).remove();
-      await post.save();
-      res.status(200).json(post);
-    }
-  });
-};
-//DELETE COMMENT
-exports.deleteCommentReply = async (req, res) => {
-  const { postId, commentId, commentReplyId } = req.params;
-  await Post.findById(postId, async function (err, post) {
-    if (!err) {
-      let comment = post.comments.id(commentId);
-      let commentReply = comment.commentReplies.id(commentReplyId);
-      await commentReply.remove();
-      await post.save();
-      res.status(200).json(post);
-    }
-  });
-};
+      await comment.remove();
 
-//FETCH NOTIFICATION
-exports.fetchNotification = async (req, res) => {
-  const { postId, commentId, commentReplyId, userId } = req.params;
-  let post = await Post.findById(postId);
-  post.comments = post.comments.id(commentId);
-  post.comments[0].commentReplies = post.comments
-    .id(commentId)
-    .commentReplies.id(commentReplyId);
-
-  await User.findById(userId, async function (err, user) {
-    if (!err) {
-      let updatedNotifications = user.notifications.map((notification) =>
-        notification.commentReplyId == commentReplyId
-          ? { ...notification, read: true }
-          : notification
-      );
-
-      user.notifications = updatedNotifications;
-      await user.save();
-    }
-  });
-
-  try {
-    res.status(200).send(post);
-  } catch (error) {
-    res.status(404).json({ error: error });
-  }
-};
-
-//CLEAR ALL NOTIFICATIONS
-exports.clearAllNotifications = async (req, res) => {
-  const { userId } = req.params;
-  const { type } = req.body;
-  console.log(userId, type);
-  await User.findById(userId, async function (err, user) {
-    if (type == "clear") {
-      if (!err) {
-        user.notifications = [];
-        await user.save();
-      }
-    }
-    if (type == "read") {
-      if (!err) {
-        let updatedNotifications = user.notifications.map((notification) => {
-          return { ...notification, read: true };
-        });
-
-        user.notifications = updatedNotifications;
-        await user.save();
-      }
+      res.status(200).json(comment);
     }
   });
 };

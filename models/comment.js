@@ -8,7 +8,7 @@ const commentSchema = mongoose.Schema({
     type: [],
     default: [],
   },
-  parentPostId: String,
+  parentPostId: { type: String },
   likes: {
     type: [String],
     default: [],

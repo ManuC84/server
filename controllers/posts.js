@@ -8,7 +8,7 @@ exports.getPosts = async (req, res) => {
       req.query.skip && /^\d+$/.test(req.query.skip)
         ? Number(req.query.skip)
         : 0;
-    const posts = await Post.find({}, undefined, { skip, limit: 6 }).sort({
+    const posts = await Post.find({}, undefined, { skip, limit: 10 }).sort({
       createdAt: -1,
     });
     //Fetch all at once: const posts = await Post.find().limit(10).sort({ createdAt: -1 });
@@ -130,6 +130,11 @@ exports.addTags = async (req, res) => {
 exports.likePost = async (req, res) => {
   const { userId } = req.body;
   const { postId } = req.params;
+
+  if (!userId || !postId)
+    return res.status(400).json({
+      errorMessage: "There seems to be an error, please try again later",
+    });
 
   const post = await Post.findById(postId);
 

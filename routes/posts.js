@@ -1,5 +1,5 @@
-const express = require("express");
-const { body } = require("express-validator");
+const express = require('express');
+const { body } = require('express-validator');
 const router = express.Router();
 const {
   getPosts,
@@ -9,81 +9,102 @@ const {
   getSinglePost,
   likePost,
   dislikePost,
-} = require("../controllers/posts.js");
+} = require('../controllers/posts.js');
 const {
+  fetchComments,
   addComments,
-  addCommentReply,
+
   likeComment,
   dislikeComment,
+
+  editComment,
+
+  deleteComment,
+  fetchSingleComment,
+} = require('../controllers/comments.js');
+
+const {
+  fetchCommentReplies,
+  addCommentReply,
   likeCommentReply,
   dislikeCommentReply,
-  editComment,
   editCommentReply,
-  deleteComment,
   deleteCommentReply,
+  fetchSingleCommentReply,
+} = require('../controllers/commentReplies.js');
+const {
   fetchNotification,
   clearAllNotifications,
-} = require("../controllers/comments.js");
-const { auth } = require("../middleware/auth.js");
+} = require('../controllers/notifications.js');
+const { auth } = require('../middleware/auth.js');
 
-router.get("/", getPosts);
+router.get('/', getPosts);
 
-router.post("/", body("url").isURL().withMessage("Invalid Url"), createPost);
+router.post('/', body('url').isURL().withMessage('Invalid Url'), createPost);
 
-router.get("/:id", getSinglePost);
+router.get('/:id', getSinglePost);
 
-router.get("/:id/comments");
+router.get('/:id/comments', fetchComments);
 
-router.post("/:id/comments", auth, addComments);
+router.get('/:postId/comments/:commentId', fetchSingleComment);
 
-router.post("/:postId/comments/:commentId", auth, addCommentReply);
+router.post('/:id/comments', auth, addComments);
 
-router.post("/tags", body("tags.*").trim().escape(), getPostsByTags);
+router.get('/:postId/comments/:commentId/commentReplies', fetchCommentReplies);
 
-router.post("/tags/addTags/:id", body("tag").trim().escape(), addTags);
+router.get(
+  '/:postId/comments/:commentId/commentReplies/:commentReplyId',
+  fetchSingleCommentReply,
+);
 
-router.post("/:postId/likes", auth, likePost);
+router.post('/:postId/comments/:commentId', auth, addCommentReply);
 
-router.post("/:postId/dislikes", auth, dislikePost);
+router.post('/tags', body('tags.*').trim().escape(), getPostsByTags);
 
-router.post("/:postId/comments/:commentId/likes", auth, likeComment);
+router.post('/tags/addTags/:id', body('tag').trim().escape(), addTags);
 
-router.post("/:postId/comments/:commentId/dislikes", auth, dislikeComment);
+router.post('/:postId/likes', auth, likePost);
+
+router.post('/:postId/dislikes', auth, dislikePost);
+
+router.post('/:postId/comments/:commentId/likes', auth, likeComment);
+
+router.post('/:postId/comments/:commentId/dislikes', auth, dislikeComment);
 
 router.post(
-  "/:postId/comments/:commentId/commentReplies/:commentReplyId/likes",
+  '/:postId/comments/:commentId/commentReplies/:commentReplyId/likes',
   auth,
-  likeCommentReply
+  likeCommentReply,
 );
 
 router.post(
-  "/:postId/comments/:commentId/commentReplies/:commentReplyId/dislikes",
+  '/:postId/comments/:commentId/commentReplies/:commentReplyId/dislikes',
   auth,
-  dislikeCommentReply
+  dislikeCommentReply,
 );
 
-router.put("/:postId/comments/:commentId/edit", auth, editComment);
+router.put('/:postId/comments/:commentId/edit', auth, editComment);
 
 router.put(
-  "/:postId/comments/:commentId/commentReplies/:commentReplyId/edit",
+  '/:postId/comments/:commentId/commentReplies/:commentReplyId/edit',
   auth,
-  editCommentReply
+  editCommentReply,
 );
 
-router.delete("/:postId/comments/:commentId/delete", auth, deleteComment);
+router.delete('/:postId/comments/:commentId/delete', auth, deleteComment);
 
 router.delete(
-  "/:postId/comments/:commentId/commentReplies/:commentReplyId/delete",
+  '/:postId/comments/:commentId/commentReplies/:commentReplyId/delete',
   auth,
-  deleteCommentReply
+  deleteCommentReply,
 );
 
-router.post(
-  "/:postId/comments/:commentId/commentReplies/:commentReplyId/user/:userId/notifications",
-  auth,
-  fetchNotification
-);
+// router.post(
+//   "/:postId/comments/:commentId/commentReplies/:commentReplyId/user/:userId/notifications",
+//   auth,
+//   fetchNotification
+// );
 
-router.post("/:userId/clearAllNotifications", auth, clearAllNotifications);
+// router.post("/:userId/clearAllNotifications", auth, clearAllNotifications);
 
 module.exports = router;
