@@ -1,7 +1,8 @@
-const Post = require("../models/postMessage.js");
-const User = require("../models/user.js");
-const Comment = require("../models/comment.js");
-const CommentReply = require("../models/commentReply.js");
+const Post = require('../models/postMessage.js');
+const User = require('../models/user.js');
+const Comment = require('../models/comment.js');
+const CommentReply = require('../models/commentReply.js');
+const Notification = require('../models/notification.js');
 
 //FETCH COMMENTS
 exports.fetchComments = async (req, res) => {
@@ -18,8 +19,8 @@ exports.fetchComments = async (req, res) => {
 exports.fetchSingleComment = async (req, res) => {
   const { commentId } = req.params;
 
-  const comment = await Comment.findById(commentId);
   try {
+    const comment = await Comment.findById(commentId);
     res.status(200).json([comment]);
   } catch (error) {
     res.status(404).json({ error: error });
@@ -52,7 +53,7 @@ exports.likeComment = async (req, res) => {
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = comment.dislikes.findIndex(
-    (id) => id === String(userId)
+    (id) => id === String(userId),
   );
 
   if (dislikeIndex !== -1) {
@@ -82,7 +83,7 @@ exports.dislikeComment = async (req, res) => {
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
   const dislikeIndex = comment.dislikes.findIndex(
-    (id) => id === String(userId)
+    (id) => id === String(userId),
   );
 
   if (likeIndex !== -1) {
@@ -112,7 +113,7 @@ exports.editComment = async (req, res) => {
   if (req.userId !== (comment.creator[0].googleId || comment.creator[0]._id)) {
     return res
       .status(401)
-      .json({ error: "You are not authorized to perform that action" });
+      .json({ error: 'You are not authorized to perform that action' });
   }
   comment.comment = commentText;
   try {
@@ -126,9 +127,19 @@ exports.editComment = async (req, res) => {
 //DELETE COMMENT
 exports.deleteComment = async (req, res) => {
   const { postId, commentId } = req.params;
+  await Notification.findOne(
+    {
+      parentCommentId: commentId,
+    },
+    async function (err, notification) {
+      if (!err) await notification.remove();
+    },
+  );
+
   await Comment.findById(commentId, async function (err, comment) {
     if (!err) {
       await comment.remove();
+
       res.status(200).json(comment);
     }
   });

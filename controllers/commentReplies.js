@@ -34,7 +34,10 @@ exports.addCommentReply = async (req, res) => {
   const { commentReply, creator } = req.body;
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
 
-  console.log(creator);
+  const parentComment = await Comment.findById(parentCommentId);
+
+  if (!parentComment)
+    return res.status(404).json({ error: 'That comment has been deleted' });
 
   //Save comment reply to db
   const newCommentReply = new CommentReply({

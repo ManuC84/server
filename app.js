@@ -6,6 +6,7 @@ var mongoose = require('mongoose');
 var dotenv = require('dotenv');
 var cors = require('cors');
 var { connectionUrl } = require('./config/config.js');
+var session = require('express-session');
 
 var indexRouter = require('./routes');
 var usersRouter = require('./routes/users');
