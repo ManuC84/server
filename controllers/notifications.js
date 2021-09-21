@@ -30,32 +30,6 @@ exports.readNotification = async (req, res) => {
   }
 };
 
-// // FETCH NOTIFICATION
-
-// exports.fetchNotification = async (req, res) => {
-//   const { postId, commentId, commentReplyId, userId } = req.params;
-//   let post = await Post.findById(postId);
-
-//   await User.findById(userId, async function (err, user) {
-//     if (!err) {
-//       let updatedNotifications = user.notifications.map((notification) =>
-//         notification.commentReplyId == commentReplyId
-//           ? { ...notification, read: true }
-//           : notification,
-//       );
-
-//       user.notifications = updatedNotifications;
-//       await user.save();
-//     }
-//   });
-
-//   try {
-//     res.status(200).send(post);
-//   } catch (error) {
-//     res.status(404).json({ error: error });
-//   }
-// };
-
 //READ ALL NOTIFICATIONS
 exports.readAllNotifications = async (req, res) => {
   const { userId } = req.params;
@@ -65,16 +39,6 @@ exports.readAllNotifications = async (req, res) => {
   } catch (error) {
     res.status(404).json({ error: error });
   }
-  // const notifications = await Notification.find({ parentUserId: userId });
-  // const updatedNotifications = notifications.map((notification) => {
-  //   return { ...notification, read: true };
-  // });
-  // console.log(updatedNotifications);
-  // try {
-  //   await updatedNotifications.save();
-  // } catch (error) {
-  //   res.status(404).json({ error: error });
-  // }
 };
 
 //CLEAR ALL NOTIFICATIONS
@@ -89,27 +53,3 @@ exports.clearAllNotifications = async (req, res) => {
     res.status(404).json({ error: error });
   }
 };
-
-// //CLEAR ALL NOTIFICATIONS
-// exports.clearAllNotifications = async (req, res) => {
-//   const { userId } = req.params;
-//   const { type } = req.body;
-//   await User.findById(userId, async function (err, user) {
-//     if (type == 'clear') {
-//       if (!err) {
-//         user.notifications = [];
-//         await user.save();
-//       }
-//     }
-//     if (type == 'read') {
-//       if (!err) {
-//         let updatedNotifications = user.notifications.map((notification) => {
-//           return { ...notification, read: true };
-//         });
-
-//         user.notifications = updatedNotifications;
-//         await user.save();
-//       }
-//     }
-//   });
-// };
