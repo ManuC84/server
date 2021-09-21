@@ -5,7 +5,7 @@ const CommentReply = require('../models/commentReply.js');
 const Notification = require('../models/notification.js');
 
 //FETCH NOTIFICATION TEST
-exports.fetchNotificationsTest = async (req, res) => {
+exports.fetchNotification = async (req, res) => {
   const { userId } = req.params;
 
   const userNotifications = await Notification.find({ parentUserId: userId });
