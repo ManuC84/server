@@ -1,5 +1,7 @@
-const Post = require("../models/postMessage.js");
-const { fetchMetadata } = require("../utils/fetchMetadata.js");
+const Post = require('../models/postMessage.js');
+const { fetchMetadata } = require('../utils/fetchMetadata.js');
+const puppeteer = require('puppeteer');
+const { v1: uuidv1, v4: uuidv4 } = require('uuid');
 
 //GET ALL POSTS
 exports.getPosts = async (req, res) => {
@@ -36,10 +38,10 @@ exports.createPost = async (req, res) => {
   const { url: userUrl, creator, plugin } = req.body;
 
   const {
-    description = "No description available",
-    image = "/images/no-image.png",
+    description = 'No description available',
+    image,
     keywords,
-    title = "No title available",
+    title = 'No title available',
     type,
     url,
     provider,
@@ -48,11 +50,26 @@ exports.createPost = async (req, res) => {
 
   const tags = keywords && keywords.map((tag) => tag.toLowerCase());
 
+  let screenshotId;
+
+  const capture = async () => {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    screenshotId = uuidv1();
+    await page.goto(url);
+    await page.screenshot({
+      path: `./public/images/screenshot-${screenshotId}.png`,
+    });
+    await browser.close();
+  };
+
+  if (!image) await capture();
+
   const newPost = new Post({
     title: title,
     description: description,
     url: url,
-    image: image,
+    image: image || `/images/screenshot-${screenshotId}.png`,
     tags: tags,
     type: type,
     provider: provider,
@@ -71,7 +88,7 @@ exports.createPost = async (req, res) => {
   }
 
   //Browser extension test to see if post already exists
-  if (plugin === "plugin-initial") return res.status(200).send();
+  if (plugin === 'plugin-initial') return res.status(200).send();
 
   try {
     await newPost.save();
@@ -93,7 +110,7 @@ exports.getPostsByTags = async (req, res) => {
       res.status(200).json(taggedPosts);
     } else {
       res.status(404).json({
-        message: "Your search yielded no results, please try again",
+        message: 'Your search yielded no results, please try again',
       });
     }
   } catch (error) {
@@ -112,7 +129,7 @@ exports.addTags = async (req, res) => {
     post.tags.unshift(lowerCaseTag);
   } else {
     res.status(404).json({
-      addTagError: "This tag already exists",
+      addTagError: 'This tag already exists',
       postId: post._id,
     });
     return;
@@ -133,7 +150,7 @@ exports.likePost = async (req, res) => {
 
   if (!userId || !postId)
     return res.status(400).json({
-      errorMessage: "There seems to be an error, please try again later",
+      errorMessage: 'There seems to be an error, please try again later',
     });
 
   const post = await Post.findById(postId);
