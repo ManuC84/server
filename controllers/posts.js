@@ -1,7 +1,15 @@
 const Post = require('../models/postMessage.js');
 const { fetchMetadata } = require('../utils/fetchMetadata.js');
 const puppeteer = require('puppeteer');
-const { v1: uuidv1, v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require('uuid');
+
+const AWS = require('aws-sdk');
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_ID,
+  secretAccessKey: process.env.AWS_ACCESS_KEY,
+});
+const s3 = new AWS.S3();
+const bucket = process.env.AWS_BUCKET_NAME;
 
 //GET ALL POSTS
 exports.getPosts = async (req, res) => {
@@ -50,26 +58,41 @@ exports.createPost = async (req, res) => {
 
   const tags = keywords && keywords.map((tag) => tag.toLowerCase());
 
-  let screenshotId;
+  let screenshotUrl;
 
   const capture = async () => {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    screenshotId = uuidv1();
-    await page.goto(url);
-    await page.screenshot({
-      path: `./public/images/screenshot-${screenshotId}.png`,
-    });
-    await browser.close();
+    const randomId = uuidv4();
+    try {
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+      await page.goto(url);
+      const screenShot = await page.screenshot();
+      const params = {
+        Bucket: bucket,
+        Key: `${randomId}.png`,
+        Body: screenShot,
+      };
+      await s3
+        .upload(params)
+        .promise()
+        .then((data) => {
+          console.log(data.Location);
+          screenshotUrl = data.Location;
+        });
+      await browser.close();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   if (!image) await capture();
+  console.log('url:' + screenshotUrl);
 
   const newPost = new Post({
     title: title,
     description: description,
     url: url,
-    image: image || `/images/screenshot-${screenshotId}.png`,
+    image: image || screenshotUrl,
     tags: tags,
     type: type,
     provider: provider,
