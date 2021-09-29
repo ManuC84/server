@@ -86,7 +86,6 @@ exports.createPost = async (req, res) => {
   };
 
   if (!image) await capture();
-  console.log('url:' + screenshotUrl);
 
   const newPost = new Post({
     title: title,
@@ -110,7 +109,7 @@ exports.createPost = async (req, res) => {
     console.log(error);
   }
 
-  //Browser extension test to see if post already exists
+  //Browser extension test to see if post already exists then exit the program
   if (plugin === 'plugin-initial') return res.status(200).send();
 
   try {
