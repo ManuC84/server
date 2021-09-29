@@ -63,7 +63,7 @@ exports.createPost = async (req, res) => {
   const capture = async () => {
     const randomId = uuidv4();
     try {
-      const browser = await puppeteer.launch();
+      const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
       const page = await browser.newPage();
       await page.goto(url);
       const screenShot = await page.screenshot();
