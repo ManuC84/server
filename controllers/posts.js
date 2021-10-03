@@ -4,6 +4,7 @@ const puppeteer = require('puppeteer');
 const { v4: uuidv4 } = require('uuid');
 
 const AWS = require('aws-sdk');
+const Comment = require('../models/comment.js');
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_ID,
   secretAccessKey: process.env.AWS_ACCESS_KEY,
@@ -18,9 +19,98 @@ exports.getPosts = async (req, res) => {
       req.query.skip && /^\d+$/.test(req.query.skip)
         ? Number(req.query.skip)
         : 0;
-    const posts = await Post.find({}, undefined, { skip, limit: 10 }).sort({
-      createdAt: -1,
-    });
+
+    let posts;
+
+    if (!req.query.sort)
+      posts = await Post.find({}, undefined, { skip, limit: 10 }).sort({
+        createdAt: -1,
+      });
+
+    if (req.query.sort === 'new')
+      posts = await Post.find({}, undefined, { skip, limit: 10 }).sort({
+        createdAt: -1,
+      });
+
+    if (req.query.sort === 'most-liked') {
+      posts = await Post.aggregate([
+        {
+          $addFields: {
+            likesLength: {
+              $size: '$likes',
+            },
+          },
+        },
+        { $match: { likesLength: { $gt: 0 } } },
+        {
+          $sort: {
+            likesLength: -1,
+          },
+        },
+
+        { $skip: skip },
+        {
+          $limit: 10,
+        },
+      ]);
+    }
+    if (req.query.sort === 'controversial') {
+      posts = await Post.aggregate([
+        {
+          $addFields: {
+            dislikesLength: {
+              $size: '$dislikes',
+            },
+          },
+        },
+        {
+          $sort: {
+            dislikesLength: -1,
+          },
+        },
+        { $match: { dislikesLength: { $gt: 0 } } },
+        {
+          $limit: 10,
+        },
+        { $skip: skip },
+      ]);
+    }
+    if (req.query.sort === 'hot') {
+      posts = await Post.aggregate(
+        [
+          { $addFields: { post_id: { $toString: '$_id' } } },
+          {
+            $lookup: {
+              from: 'comments',
+              localField: 'post_id',
+              foreignField: 'parentPostId',
+              as: 'postComments',
+            },
+          },
+          {
+            $addFields: {
+              commentsLength: {
+                $size: '$postComments',
+              },
+            },
+          },
+          {
+            $sort: {
+              commentsLength: -1,
+            },
+          },
+          { $match: { commentsLength: { $gt: 0 } } },
+          {
+            $limit: 10,
+          },
+          { $skip: skip },
+        ],
+        (err, data) => {
+          if (err) console.log(err);
+        },
+      );
+    }
+
     //Fetch all at once: const posts = await Post.find().limit(10).sort({ createdAt: -1 });
     res.status(200).json(posts);
   } catch (error) {
@@ -124,7 +214,6 @@ exports.createPost = async (req, res) => {
 exports.getPostsByTags = async (req, res) => {
   try {
     const { tags } = req.body;
-    console.log(tags);
     const lowerCaseTags = tags.map((tag) => tag.toLowerCase());
     const taggedPosts = await Post.find({ tags: { $all: lowerCaseTags } });
 
