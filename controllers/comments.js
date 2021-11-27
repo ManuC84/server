@@ -1,8 +1,8 @@
-const Post = require('../models/postMessage.js');
-const User = require('../models/user.js');
-const Comment = require('../models/comment.js');
-const CommentReply = require('../models/commentReply.js');
-const Notification = require('../models/notification.js');
+const Post = require("../models/postMessage.js");
+const User = require("../models/user.js");
+const Comment = require("../models/comment.js");
+const CommentReply = require("../models/commentReply.js");
+const Notification = require("../models/notification.js");
 
 //FETCH COMMENTS
 exports.fetchComments = async (req, res) => {
@@ -52,9 +52,7 @@ exports.likeComment = async (req, res) => {
   const comment = await Comment.findById(commentId);
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
-  const dislikeIndex = comment.dislikes.findIndex(
-    (id) => id === String(userId),
-  );
+  const dislikeIndex = comment.dislikes.findIndex((id) => id === String(userId));
 
   if (dislikeIndex !== -1) {
     comment.dislikes = comment.dislikes.filter((id) => id !== String(userId));
@@ -82,9 +80,7 @@ exports.dislikeComment = async (req, res) => {
   const comment = await Comment.findById(commentId);
 
   const likeIndex = comment.likes.findIndex((id) => id === String(userId));
-  const dislikeIndex = comment.dislikes.findIndex(
-    (id) => id === String(userId),
-  );
+  const dislikeIndex = comment.dislikes.findIndex((id) => id === String(userId));
 
   if (likeIndex !== -1) {
     comment.likes = comment.likes.filter((id) => id !== String(userId));
@@ -111,9 +107,7 @@ exports.editComment = async (req, res) => {
   const comment = await Comment.findById(commentId);
 
   if (req.userId !== (comment.creator[0].googleId || comment.creator[0]._id)) {
-    return res
-      .status(401)
-      .json({ error: 'You are not authorized to perform that action' });
+    return res.status(401).json({ error: "You are not authorized to perform that action" });
   }
   comment.comment = commentText;
   try {
@@ -133,7 +127,7 @@ exports.deleteComment = async (req, res) => {
     },
     async function (err, notification) {
       if (!err) await notification.remove();
-    },
+    }
   );
 
   await Comment.findById(commentId, async function (err, comment) {
@@ -143,4 +137,33 @@ exports.deleteComment = async (req, res) => {
       res.status(200).json(comment);
     }
   });
+};
+
+//FETCH TOP COMMENTS
+exports.fetchTopComments = async (req, res) => {
+  try {
+    const topComments = await Comment.aggregate([
+      {
+        $addFields: {
+          likesLength: {
+            $size: "$likes",
+          },
+        },
+      },
+      { $match: { likesLength: { $gt: 0 } } },
+      {
+        $sort: {
+          likesLength: -1,
+        },
+      },
+
+      {
+        $limit: 3,
+      },
+    ]);
+    console.log("topComments:", topComments);
+    res.status(200).json(topComments);
+  } catch (error) {
+    res.status(404).json({ error: error });
+  }
 };
