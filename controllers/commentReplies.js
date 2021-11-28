@@ -1,20 +1,17 @@
-const CommentReply = require('../models/commentReply.js');
-const Comment = require('../models/comment.js');
-const User = require('../models/user.js');
-const Notification = require('../models/notification.js');
-const socketApi = require('../socketApi');
+const CommentReply = require("../models/commentReply.js");
+const Comment = require("../models/comment.js");
+const User = require("../models/user.js");
+const Notification = require("../models/notification.js");
+const socketApi = require("../socketApi");
 
 //FETCH COMMENT REPLIES
 exports.fetchCommentReplies = async (req, res) => {
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
-  CommentReply.find(
-    { parentCommentId: parentCommentId },
-    function (error, commentReplies) {
-      if (error) return res.status(400).json({ message: error.message });
+  CommentReply.find({ parentCommentId: parentCommentId }, function (error, commentReplies) {
+    if (error) return res.status(400).json({ message: error.message });
 
-      res.status(200).json(commentReplies);
-    },
-  );
+    res.status(200).json(commentReplies);
+  });
 };
 
 //FETCH SINGLE COMMENT REPLY
@@ -31,13 +28,13 @@ exports.fetchSingleCommentReply = async (req, res) => {
 
 //POST COMMENT REPLIES && HANDLE SOCKET NOTIFICATIONS
 exports.addCommentReply = async (req, res) => {
-  const { commentReply, creator } = req.body;
+  const { commentReply, creator, replyCreatorId } = req.body;
+
   const { postId: parentPostId, commentId: parentCommentId } = req.params;
 
   const parentComment = await Comment.findById(parentCommentId);
 
-  if (!parentComment)
-    return res.status(404).json({ error: 'That comment has been deleted' });
+  if (!parentComment) return res.status(404).json({ error: "That comment has been deleted" });
 
   //Save comment reply to db
   const newCommentReply = new CommentReply({
@@ -59,7 +56,7 @@ exports.addCommentReply = async (req, res) => {
 
   const commentReplyId = newCommentReply._id;
 
-  const commentCreatorId = comment.creator[0]._id;
+  const commentCreatorId = replyCreatorId ? replyCreatorId : comment.creator[0]._id;
 
   // const commentCreator = await User.findById(commentCreatorId);
 
@@ -87,8 +84,9 @@ exports.addCommentReply = async (req, res) => {
       commentReplyId,
       imageUrl: creator.imageUrl,
     });
+
     await newNotification.save();
-    socketApi.io.emit('user', newNotification);
+    socketApi.io.emit("user", newNotification);
   }
 
   // try {
@@ -107,22 +105,16 @@ exports.likeCommentReply = async (req, res) => {
   const commentReply = await CommentReply.findById(commentReplyId);
 
   const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
-  const dislikeIndex = commentReply.dislikes.findIndex(
-    (id) => id === String(userId),
-  );
+  const dislikeIndex = commentReply.dislikes.findIndex((id) => id === String(userId));
 
   if (dislikeIndex !== -1) {
-    commentReply.dislikes = commentReply.dislikes.filter(
-      (id) => id !== String(userId),
-    );
+    commentReply.dislikes = commentReply.dislikes.filter((id) => id !== String(userId));
   }
 
   if (likeIndex === -1) {
     commentReply.likes.push(userId);
   } else {
-    commentReply.likes = commentReply.likes.filter(
-      (id) => id !== String(userId),
-    );
+    commentReply.likes = commentReply.likes.filter((id) => id !== String(userId));
   }
 
   try {
@@ -142,22 +134,16 @@ exports.dislikeCommentReply = async (req, res) => {
   const commentReply = await CommentReply.findById(commentReplyId);
 
   const likeIndex = commentReply.likes.findIndex((id) => id === String(userId));
-  const dislikeIndex = commentReply.dislikes.findIndex(
-    (id) => id === String(userId),
-  );
+  const dislikeIndex = commentReply.dislikes.findIndex((id) => id === String(userId));
 
   if (likeIndex !== -1) {
-    commentReply.likes = commentReply.likes.filter(
-      (id) => id !== String(userId),
-    );
+    commentReply.likes = commentReply.likes.filter((id) => id !== String(userId));
   }
 
   if (dislikeIndex === -1) {
     commentReply.dislikes.push(userId);
   } else {
-    commentReply.dislikes = commentReply.dislikes.filter(
-      (id) => id !== String(userId),
-    );
+    commentReply.dislikes = commentReply.dislikes.filter((id) => id !== String(userId));
   }
 
   try {
@@ -175,13 +161,8 @@ exports.editCommentReply = async (req, res) => {
   const { postId, commentId, commentReplyId } = req.params;
   const { commentReplyText } = req.body;
   const commentReply = await CommentReply.findById(commentReplyId);
-  if (
-    req.userId !==
-    (commentReply.creator[0].googleId || commentReply.creator[0]._id)
-  ) {
-    return res
-      .status(401)
-      .json({ error: 'You are not authorized to perform that action' });
+  if (req.userId !== (commentReply.creator[0].googleId || commentReply.creator[0]._id)) {
+    return res.status(401).json({ error: "You are not authorized to perform that action" });
   }
   commentReply.commentReply = commentReplyText;
   try {
@@ -197,14 +178,11 @@ exports.editCommentReply = async (req, res) => {
 //DELETE COMMENT REPLY
 exports.deleteCommentReply = async (req, res) => {
   const { postId, commentId, commentReplyId } = req.params;
-  await CommentReply.findById(
-    commentReplyId,
-    async function (err, commentReply) {
-      if (!err) {
-        await commentReply.remove();
+  await CommentReply.findById(commentReplyId, async function (err, commentReply) {
+    if (!err) {
+      await commentReply.remove();
 
-        res.status(200).json(commentReply);
-      }
-    },
-  );
+      res.status(200).json(commentReply);
+    }
+  });
 };
