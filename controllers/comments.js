@@ -121,14 +121,12 @@ exports.editComment = async (req, res) => {
 //DELETE COMMENT
 exports.deleteComment = async (req, res) => {
   const { postId, commentId } = req.params;
-  await Notification.findOne(
-    {
-      parentCommentId: commentId,
-    },
-    async function (err, notification) {
-      if (!err) await notification.remove();
-    }
-  );
+
+  //delete notification with parent comment id
+  await Notification.deleteMany({ parentCommentId: commentId });
+
+  //delete comment replies
+  await CommentReply.deleteMany({ parentCommentId: commentId });
 
   await Comment.findById(commentId, async function (err, comment) {
     if (!err) {
