@@ -1,10 +1,10 @@
-const Post = require('../models/postMessage.js');
-const { fetchMetadata } = require('../utils/fetchMetadata.js');
-const puppeteer = require('puppeteer');
-const { v4: uuidv4 } = require('uuid');
+const Post = require("../models/postMessage.js");
+const { fetchMetadata, fetchLanguage } = require("../utils/fetchMetadata.js");
+const puppeteer = require("puppeteer");
+const { v4: uuidv4 } = require("uuid");
 
-const AWS = require('aws-sdk');
-const Comment = require('../models/comment.js');
+const AWS = require("aws-sdk");
+const Comment = require("../models/comment.js");
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_ID,
   secretAccessKey: process.env.AWS_ACCESS_KEY,
@@ -15,102 +15,110 @@ const bucket = process.env.AWS_BUCKET_NAME;
 //GET ALL POSTS
 exports.getPosts = async (req, res) => {
   try {
-    const skip =
-      req.query.skip && /^\d+$/.test(req.query.skip)
-        ? Number(req.query.skip)
-        : 0;
+    const skip = req.query.skip && /^\d+$/.test(req.query.skip) ? Number(req.query.skip) : 0;
 
     let posts;
+    let language = {};
+    if (req.query.language) {
+      language = { language: req.query.language };
+    }
 
-    if (!req.query.sort)
+    if (!req.query.sort && !req.query.language)
       posts = await Post.find({}, undefined, { skip, limit: 10 }).sort({
         createdAt: -1,
       });
 
-    if (req.query.sort === 'new')
-      posts = await Post.find({}, undefined, { skip, limit: 10 }).sort({
-        createdAt: -1,
-      });
+    if (req.query.sort) {
+      if (req.query.sort === "new")
+        posts = await Post.find(language, undefined, {
+          skip,
+          limit: 10,
+        }).sort({
+          createdAt: -1,
+        });
 
-    if (req.query.sort === 'most-liked') {
-      posts = await Post.aggregate([
-        {
-          $addFields: {
-            likesLength: {
-              $size: '$likes',
-            },
-          },
-        },
-        { $match: { likesLength: { $gt: 0 } } },
-        {
-          $sort: {
-            likesLength: -1,
-          },
-        },
-
-        { $skip: skip },
-        {
-          $limit: 10,
-        },
-      ]);
-    }
-    if (req.query.sort === 'controversial') {
-      posts = await Post.aggregate([
-        {
-          $addFields: {
-            dislikesLength: {
-              $size: '$dislikes',
-            },
-          },
-        },
-        {
-          $sort: {
-            dislikesLength: -1,
-          },
-        },
-        { $match: { dislikesLength: { $gt: 0 } } },
-        {
-          $limit: 10,
-        },
-        { $skip: skip },
-      ]);
-    }
-    if (req.query.sort === 'hot') {
-      posts = await Post.aggregate(
-        [
-          { $addFields: { post_id: { $toString: '$_id' } } },
-          {
-            $lookup: {
-              from: 'comments',
-              localField: 'post_id',
-              foreignField: 'parentPostId',
-              as: 'postComments',
-            },
-          },
+      if (req.query.sort === "most-liked") {
+        posts = await Post.aggregate([
           {
             $addFields: {
-              commentsLength: {
-                $size: '$postComments',
+              likesLength: {
+                $size: "$likes",
+              },
+            },
+          },
+          { $match: { likesLength: { $gt: 0 } } },
+          { $match: language },
+          {
+            $sort: {
+              likesLength: -1,
+            },
+          },
+
+          { $skip: skip },
+          {
+            $limit: 10,
+          },
+        ]);
+      }
+      if (req.query.sort === "controversial") {
+        posts = await Post.aggregate([
+          {
+            $addFields: {
+              dislikesLength: {
+                $size: "$dislikes",
               },
             },
           },
           {
             $sort: {
-              commentsLength: -1,
+              dislikesLength: -1,
             },
           },
-          { $match: { commentsLength: { $gt: 0 } } },
+          { $match: { dislikesLength: { $gt: 0 } } },
+          { $match: language },
           {
             $limit: 10,
           },
           { $skip: skip },
-        ],
-        (err, data) => {
-          if (err) console.log(err);
-        },
-      );
+        ]);
+      }
+      if (req.query.sort === "hot") {
+        posts = await Post.aggregate(
+          [
+            { $addFields: { post_id: { $toString: "$_id" } } },
+            {
+              $lookup: {
+                from: "comments",
+                localField: "post_id",
+                foreignField: "parentPostId",
+                as: "postComments",
+              },
+            },
+            {
+              $addFields: {
+                commentsLength: {
+                  $size: "$postComments",
+                },
+              },
+            },
+            {
+              $sort: {
+                commentsLength: -1,
+              },
+            },
+            { $match: { commentsLength: { $gt: 0 } } },
+            { $match: language },
+            {
+              $limit: 10,
+            },
+            { $skip: skip },
+          ],
+          (err, data) => {
+            if (err) console.log(err);
+          }
+        );
+      }
     }
-
     //Fetch all at once: const posts = await Post.find().limit(10).sort({ createdAt: -1 });
     res.status(200).json(posts);
   } catch (error) {
@@ -136,15 +144,17 @@ exports.createPost = async (req, res) => {
   const { url: userUrl, creator, plugin } = req.body;
 
   const {
-    description = 'No description available',
+    description = "No description available",
     image,
     keywords,
-    title = 'No title available',
+    title = "No title available",
     type,
     url,
     provider,
     icon,
   } = await fetchMetadata(userUrl);
+
+  const language = await fetchLanguage(userUrl);
 
   const tags = keywords && keywords.map((tag) => tag.toLowerCase());
 
@@ -153,7 +163,7 @@ exports.createPost = async (req, res) => {
   const capture = async () => {
     const randomId = uuidv4();
     try {
-      const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+      const browser = await puppeteer.launch({ args: ["--no-sandbox"] });
       const page = await browser.newPage();
       await page.goto(url);
       const screenShot = await page.screenshot();
@@ -188,6 +198,7 @@ exports.createPost = async (req, res) => {
     icon: icon,
     creator: creator,
     createdAt: new Date().toISOString(),
+    language,
   });
 
   try {
@@ -200,7 +211,7 @@ exports.createPost = async (req, res) => {
   }
 
   //Browser extension test to see if post already exists then exit the program
-  if (plugin === 'plugin-initial') return res.status(200).send();
+  if (plugin === "plugin-initial") return res.status(200).send();
 
   try {
     await newPost.save();
@@ -221,7 +232,7 @@ exports.getPostsByTags = async (req, res) => {
       res.status(200).json(taggedPosts);
     } else {
       res.status(404).json({
-        message: 'Your search yielded no results, please try again',
+        message: "Your search yielded no results, please try again",
       });
     }
   } catch (error) {
@@ -240,7 +251,7 @@ exports.addTags = async (req, res) => {
     post.tags.unshift(lowerCaseTag);
   } else {
     res.status(404).json({
-      addTagError: 'This tag already exists',
+      addTagError: "This tag already exists",
       postId: post._id,
     });
     return;
@@ -261,7 +272,7 @@ exports.likePost = async (req, res) => {
 
   if (!userId || !postId)
     return res.status(400).json({
-      errorMessage: 'There seems to be an error, please try again later',
+      errorMessage: "There seems to be an error, please try again later",
     });
 
   const post = await Post.findById(postId);

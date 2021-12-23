@@ -7,6 +7,7 @@ const postSchema = mongoose.Schema({
   url: String,
   provider: String,
   icon: String,
+  language: String,
   creator: {
     type: [],
     default: [],
