@@ -325,3 +325,38 @@ exports.dislikePost = async (req, res) => {
     res.status(400).json({ error: error });
   }
 };
+
+//Fetch trending tags
+exports.fetchTrendingTags = async (req, res) => {
+  console.log("im in");
+  try {
+    //fetch all tags from all posts
+    const allTags = await Post.find({}, { tags: 1, _id: 0 });
+    //create an array of all tags
+    const tags = allTags.reduce((acc, curr) => {
+      return acc.concat(curr.tags);
+    }, []);
+
+    //create an object with all tags and their frequency
+    const tagFrequency = tags.reduce((acc, curr) => {
+      if (acc[curr]) {
+        acc[curr] += 1;
+      } else {
+        acc[curr] = 1;
+      }
+      return acc;
+    }, {});
+
+    //sort the object by frequency
+    const sortedTags = Object.keys(tagFrequency).sort((a, b) => {
+      return tagFrequency[b] - tagFrequency[a];
+    });
+
+    //create an array of the top 10 tags
+    const topTenTags = sortedTags.slice(0, 10);
+
+    res.status(200).json(tags);
+  } catch (error) {
+    res.status(400).json({ error: error });
+  }
+};

@@ -9,6 +9,7 @@ const {
   getSinglePost,
   likePost,
   dislikePost,
+  fetchTrendingTags,
 } = require("../controllers/posts.js");
 const {
   fetchComments,
@@ -95,6 +96,8 @@ router.delete(
 );
 
 router.get("/comments/top", fetchTopComments);
+
+router.get("/tags/trending-tags", fetchTrendingTags);
 
 // router.post(
 //   "/:postId/comments/:commentId/commentReplies/:commentReplyId/user/:userId/notifications",
